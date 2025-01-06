@@ -107,56 +107,129 @@ const getFirstLine = (text) => {
     return firstLine;
 };
 
-// 4. Query the ProposalCreated events and store them in IndexedDB.
+// 4. Query the relevant events (ProposalCreated, etc.) and store/update them in IndexedDB.
+//    Then, call refreshProposalState(proposalId) to get the final state from on-chain.
 async function fetchAndStoreProposals() {
     const latestBlock = await provider.getBlockNumber();
     const fromBlock = await getLastProposalProcessedBlock();
     const toBlock = latestBlock;
 
+    //
+    // 1) Handle ProposalCreated events
+    //
     const proposalCreatedFilter = governorContract.filters.ProposalCreated();
-
     const proposalCreatedEvents = await governorContract.queryFilter(proposalCreatedFilter, fromBlock, toBlock);
 
     for (const event of proposalCreatedEvents) {
-        const { proposalId, proposer, description } = event.args;
+        const { proposalId, proposer, description, voteStart, voteEnd } = event.args;
         if (proposalId === undefined) {
-            console.log(`proposal with undefined id`);
+            console.log(`ProposalCreated event with undefined proposalId`);
             continue;
         }
         const propId = proposalId.toString();
 
-        // Check if proposal already exists
+        // Check if this proposal is already in the DB
         const existing = await db.proposals.get(propId);
-        if (existing) {
-            console.log(`Proposal ${propId} already exists. Skipping.`);
-            continue;
-        }
 
-        // Get the block and extract the timestamp
-        // const block = await provider.getBlock(event.blockNumber);
-        // const blockTimestamp = block.timestamp;
-
-        // Lookup proposer name from orchestrators
+        // Lookup proposer name/avatar from orchestrators
         const orchestrator = await db.orchestrators.get(proposer.toLowerCase());
         const proposerName = orchestrator ? orchestrator.name : '';
         const proposerAvatar = orchestrator ? orchestrator.avatar : '';
 
-        const proposal = {
-            id: propId,
-            title: getFirstLine(description),
-            description,
-            proposerAddress: proposer.toLowerCase(),
-            proposerName,
-            proposerAvatar,
-            createdAt: Date.now() //TODO: FIX or REMOVE dates
-        };
+        if (!existing) {
+            const proposal = {
+                id: propId,
+                title: getFirstLine(description),
+                description,
+                proposerAddress: proposer.toLowerCase(),
+                proposerName,
+                proposerAvatar,
+                voteStart: voteStart?.toNumber ? voteStart.toNumber() : 0,
+                voteEnd: voteEnd?.toNumber ? voteEnd.toNumber() : 0,
+                status: 'Created',
+                createdAt: Date.now(), // or block.timestamp
+            };
+            await db.proposals.add(proposal);
+            console.log(`Stored new proposal ${propId} with status 'Created'`);
+        } else {
+            await db.proposals.update(propId, {
+                status: 'Created',
+                voteStart: voteStart?.toNumber ? voteStart.toNumber() : existing.voteStart,
+                voteEnd: voteEnd?.toNumber ? voteEnd.toNumber() : existing.voteEnd,
+            });
+            console.log(`Updated existing proposal ${propId} to status 'Created'`);
+        }
 
-        await db.proposals.add(proposal);
-        console.log(`Stored proposal ${propId}`);
+        // **Option B**: Immediately refresh on-chain state for this proposal
+        await refreshProposalState(propId);
     }
 
-    // Update the last processed block in metadata
+    //
+    // 2) Handle ProposalCanceled events
+    //
+    const proposalCanceledFilter = governorContract.filters.ProposalCanceled();
+    const proposalCanceledEvents = await governorContract.queryFilter(proposalCanceledFilter, fromBlock, toBlock);
+
+    for (const event of proposalCanceledEvents) {
+        const { proposalId } = event.args;
+        const propId = proposalId.toString();
+
+        const existing = await db.proposals.get(propId);
+        if (!existing) {
+            console.log(`ProposalCanceled event for ${propId} not found in DB. Skipping.`);
+            continue;
+        }
+
+        await db.proposals.update(propId, { status: 'Canceled' });
+        console.log(`Proposal ${propId} updated to status 'Canceled'`);
+
+        // **Option B**: Refresh from on-chain state (though we already know it’s Canceled)
+        await refreshProposalState(propId);
+    }
+
+    //
+    // 3) Handle ProposalExecuted events
+    //
+    const proposalExecutedFilter = governorContract.filters.ProposalExecuted();
+    const proposalExecutedEvents = await governorContract.queryFilter(proposalExecutedFilter, fromBlock, toBlock);
+
+    for (const event of proposalExecutedEvents) {
+        const { proposalId } = event.args;
+        const propId = proposalId.toString();
+
+        // Check if proposal exists
+        const existing = await db.proposals.get(propId);
+        if (!existing) {
+            console.log(`ProposalExecuted event for ${propId} not found in DB. Skipping.`);
+            continue;
+        }
+
+        // Update the status to 'Executed'
+        await db.proposals.update(propId, { status: 'Executed' });
+        console.log(`Proposal ${propId} updated to status 'Executed'`);
+
+        // Refresh from on-chain state (will confirm it’s "Executed")
+        await refreshProposalState(propId);
+    }
+
+    // 6) re-check the status for all "active-ish" proposals
+    //    (e.g., those with status 'Created', 'Active', 'Queued', 'Succeeded')
+    //    This ensures we pick up any changes from "not enough votes" or "vote ended" -> Defeated.
+    const activeStatuses = ['Created', 'Active', 'Queued', 'Succeeded', 'Pending'];
+    const potentiallyChangedProposals = await db.proposals
+        .where('status')
+        .anyOf(activeStatuses)
+        .toArray();
+
+    for (const proposal of potentiallyChangedProposals) {
+        await refreshProposalState(proposal.id);
+    }
+
+    //
+    // Finally, update the last processed block in metadata
+    //
     await updateLastProposalProcessedBlock(toBlock + 1);
+    console.log(`fetchAndStoreProposals complete. Processed up to block ${toBlock}.`);
 }
 
 // 5. Query the CastVote events and store them in IndexedDB.
@@ -594,4 +667,48 @@ async function getMetadata(key, defaultValue = null) {
  */
 async function setMetadata(key, value) {
     await db.metadata.put({ key, value });
+}
+
+/**
+ * Maps the numeric state enum to a string.
+ */
+function mapStateValueToStatus(stateValue) {
+    console.log("mapStateValueToStatus",stateValue);
+    switch (stateValue) {
+        case 0n:
+            return 'Pending';
+        case 1n:
+            return 'Active';
+        case 2n:
+            return 'Canceled';
+        case 3n:
+            return 'Defeated'; // <-- if it fails to pass
+        case 4n:
+            return 'Succeeded';
+        case 5n:
+            return 'Queued';
+        case 6n:
+            return 'Expired';
+        case 7n:
+            return 'Executed';
+        default:
+            return 'Unknown';
+    }
+}
+
+/**
+ * Calls governorContract.state(proposalId) to refresh the status in DB.
+ * This is how we detect "Defeated" or any final on-chain state.
+ */
+async function refreshProposalState(proposalId) {
+    try {
+        const stateValue = await governorContract.state(proposalId);
+        const newStatus = mapStateValueToStatus(stateValue);
+        // console.log("refreshProposalState",proposalId,stateValue,newStatus);
+
+        await db.proposals.update(proposalId.toString(), { status: newStatus });
+        console.log(`Proposal ${proposalId} updated to status: ${newStatus}`);
+    } catch (error) {
+        console.error(`Error refreshing proposal state for ID ${proposalId}:`, error);
+    }
 }

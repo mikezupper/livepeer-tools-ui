@@ -1,10 +1,10 @@
 // db.js
 import Dexie from 'dexie';
 
-const db = new Dexie('LivepeerToolDB');
+const db = new Dexie('LivepeerToolsDB');
 
 db.version(1).stores({
-    proposals: 'id, title, description, proposerAddress, createdAt',
+    proposals: 'id, title, description, proposerAddress,status, createdAt',
     votes: '++id, proposalId, voterAddress, support, stakeAmount, castAt',
     orchestrators: 'eth_address, total_stake, reward_cut, fee_cut, activation_status, name, service_uri, avatar',
     metadata: 'key, value' // Add this line

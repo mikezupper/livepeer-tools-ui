@@ -13,48 +13,75 @@ import {
     Paper,
     Divider,
     useTheme,
-    useMediaQuery,
-    IconButton, Grid, Avatar,
+    Avatar,
+    Grid,
+    Chip,
+    Button
 } from '@mui/material';
 import BallotIcon from '@mui/icons-material/Ballot';
 import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import { useLoaderData} from 'react-router-dom';
+import {ArrowForward, Description, Poll, ThumbDown, ThumbsUpDown, ThumbUp} from '@mui/icons-material';
+import { useLoaderData } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
-import Button from "@mui/material/Button";
-import {ArrowForward, Poll, ThumbDown, ThumbsUpDown, ThumbUp} from "@mui/icons-material"; // Import alpha utility
 
-// Utility function for formatting numbers
+/**
+ * Return a background color based on the proposal status and MUI theme.
+ * For example, “Active” -> a light info color, “Defeated” -> a light error color, etc.
+ */
+function getProposalColor(status, value, theme) {
+    let colorVal = value ? value : 1;
+    switch (status) {
+        case 'Active':
+            // A light “info” hue
+            return alpha(theme.palette.info.light, colorVal);
+        case 'Executed':
+            // A light “success” hue
+            return alpha(theme.palette.success.light, colorVal);
+        case 'Defeated':
+            // A light “error” hue
+            return alpha(theme.palette.error.light, colorVal);
+        default:
+            // A light grey hue for other statuses
+            return alpha(theme.palette.grey[400], colorVal);
+    }
+}
+
+/** Helper to get a solid color (not background) for the left border and status chip. */
+const getStatusColor = (status, theme) => {
+    switch (status) {
+        case 'Canceled':
+            return theme.palette.error.main;
+        case 'Executed':
+            return theme.palette.success.main;
+        case 'Active':
+        case 'Created':
+        default:
+            return theme.palette.info.main;
+    }
+};
+
 const formatNumber = (number) => {
-    return number.toLocaleString(undefined, { // 'undefined' uses the user's locale
+    return number.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
 };
 
 const VotingHistoryList = () => {
-    // proposals is an array: [{ id: ..., title: ..., proposerAddress: ..., votes: [...] }, ...]
     const { proposals } = useLoaderData();
-
-    // State to track which proposal is currently selected
     const [selectedProposalId, setSelectedProposalId] = useState(null);
-
-    // Retrieve the selected proposal data
     const selectedProposalData = selectedProposalId
-        ? proposals.find((proposal) => proposal.id === selectedProposalId)
+        ? proposals.find((p) => p.id === selectedProposalId)
         : null;
 
-    // Access the MUI theme
     const theme = useTheme();
 
     return (
         <Box
             sx={{
-                // On small screens (xs, sm, md), stack vertically; on larger, use side-by-side
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
-                // Adjust height or remove to allow auto height on smaller screens
-                height: { xs: 'auto', md: 'calc(100vh - 100px)' },
                 mt: 2,
                 mb: 2,
                 gap: 2,
@@ -65,10 +92,10 @@ const VotingHistoryList = () => {
                 sx={{
                     width: { xs: '100%', md: '30%' },
                     borderRight: { xs: 'none', md: `1px solid ${theme.palette.divider}` },
-                    overflowY: 'auto',
-                    // Add a subtle background color
                     backgroundColor: theme.palette.background.paper,
                     boxShadow: { xs: theme.shadows[1], md: 'none' },
+                    // Remove scrolling
+                    overflow: 'hidden',
                 }}
             >
                 <TableContainer component={Paper} sx={{ borderRadius: 0 }}>
@@ -103,19 +130,33 @@ const VotingHistoryList = () => {
                                         '&:hover': {
                                             backgroundColor: theme.palette.action.hover,
                                         },
-                                        // Use theme's selected color if this row is the selected one
                                         backgroundColor:
                                             proposal.id === selectedProposalId
-                                                ? theme.palette.action.selected
+                                                ? getProposalColor(proposal.status, 0.25, theme)
                                                 : 'inherit',
+                                        borderLeft: `4px solid ${getProposalColor(proposal.status, undefined, theme)}`,
                                     }}
                                 >
                                     <TableCell
                                         sx={{
-                                            fontWeight: proposal.id === selectedProposalId ? 'bold' : 'normal',
+                                            fontWeight:
+                                                proposal.id === selectedProposalId ? 'bold' : 'normal',
                                         }}
                                     >
-                                        {proposal.title || 'Untitled Proposal'}
+                                        <Typography variant="subtitle2">
+                                            {proposal.title || 'Untitled Proposal'}
+                                        </Typography>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                color: getProposalColor(proposal.status, undefined, theme),
+                                                fontWeight: 'bold',
+                                                display: 'block',
+                                                mt: 0.5,
+                                            }}
+                                        >
+                                            {proposal.status || 'N/A'}
+                                        </Typography>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -128,11 +169,11 @@ const VotingHistoryList = () => {
             <Box
                 sx={{
                     width: { xs: '100%', md: '70%' },
-                    overflowY: 'auto',
                     p: 2,
+                    // Remove scrolling
+                    overflow: 'hidden',
                 }}
             >
-                {/* If no proposal is selected, display a placeholder message */}
                 {!selectedProposalData ? (
                     <Card
                         variant="outlined"
@@ -152,26 +193,65 @@ const VotingHistoryList = () => {
                     <Card
                         variant="outlined"
                         sx={{
-                            // Add some elevation and a subtle background highlight
                             boxShadow: theme.shadows[2],
                             backgroundColor: theme.palette.background.default,
+                            height: '100%',
                         }}
                     >
                         <CardContent>
                             {/* Proposal Title */}
-                            <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                            <Typography
+                                variant="h5"
+                                sx={{
+                                    fontWeight: 'bold',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}
+                            >
                                 <BallotIcon sx={{ mr: 1 }} />
                                 {selectedProposalData.title || 'Untitled Proposal'}
                             </Typography>
 
-                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {/* Display status below the title */}
+                            <Box sx={{ mt: 1 }}>
+                                <Chip
+                                    label={selectedProposalData.status || 'N/A'}
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        color: theme.palette.common.white,
+                                        backgroundColor: getStatusColor(
+                                            selectedProposalData.status,
+                                            theme
+                                        ),
+                                    }}
+                                />
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    mt: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                }}
+                            >
                                 <PersonOutlineIcon fontSize="small" color="action" />
                                 <Typography variant="body2">
-                                    <strong>Proposer:</strong> {selectedProposalData.proposerName !=='' ? selectedProposalData.proposerName: selectedProposalData.proposerAddress}
+                                    <strong>Proposer:</strong>{' '}
+                                    {selectedProposalData.proposerName !== ''
+                                        ? selectedProposalData.proposerName
+                                        : selectedProposalData.proposerAddress}
                                 </Typography>
                             </Box>
-                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <PersonOutlineIcon fontSize="small" color="action" />
+                            <Box
+                                sx={{
+                                    mt: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                }}
+                            >
+                                <Description fontSize="small" color="action" />
                                 <Typography variant="body2">
                                     <strong>Original Proposal:</strong>
                                     <Button
@@ -186,41 +266,89 @@ const VotingHistoryList = () => {
                                     </Button>
                                 </Typography>
                             </Box>
-                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box
+                                sx={{
+                                    mt: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                }}
+                            >
                                 <Poll fontSize="small" color="action" />
                                 <Typography variant="body2">
-                                    <strong>Total Stake Voted:</strong> {typeof selectedProposalData.totalStakeVoted === 'number'
-                                    ? formatNumber(selectedProposalData.totalStakeVoted)
-                                    : selectedProposalData.totalStakeVoted}
+                                    <strong>Total Stake Voted:</strong>{' '}
+                                    {typeof selectedProposalData.totalStakeVoted === 'number'
+                                        ? formatNumber(selectedProposalData.totalStakeVoted)
+                                        : selectedProposalData.totalStakeVoted}
                                 </Typography>
                             </Box>
                             <Box sx={{ mt: 2 }}>
                                 <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                                     Total Support: {selectedProposalData.forPct.toFixed(4)}%
                                 </Typography>
-                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                    sx={{
+                                        mt: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                    }}
+                                >
                                     <ThumbUp fontSize="small" color="action" />
                                     <Typography variant="body2">
-                                        For ({selectedProposalData.forPct.toFixed(4)}%): {selectedProposalData.forStake.toLocaleString(undefined, {maximumFractionDigits: 3})} LPT
+                                        For ({selectedProposalData.forPct.toFixed(4)}%):{' '}
+                                        {selectedProposalData.forStake.toLocaleString(undefined, {
+                                            maximumFractionDigits: 3,
+                                        })}{' '}
+                                        LPT
                                     </Typography>
                                 </Box>
-                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                    sx={{
+                                        mt: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                    }}
+                                >
                                     <ThumbDown fontSize="small" color="action" />
                                     <Typography variant="body2">
-                                        Against ({selectedProposalData.againstPct.toFixed(4)}%): {selectedProposalData.againstStake.toLocaleString(undefined, {maximumFractionDigits: 3})} LPT
+                                        Against ({selectedProposalData.againstPct.toFixed(4)}%):{' '}
+                                        {selectedProposalData.againstStake.toLocaleString(undefined, {
+                                            maximumFractionDigits: 3,
+                                        })}{' '}
+                                        LPT
                                     </Typography>
                                 </Box>
-                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                    sx={{
+                                        mt: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                    }}
+                                >
                                     <ThumbsUpDown fontSize="small" color="action" />
                                     <Typography variant="body2">
-                                        Abstain ({selectedProposalData.abstainPct.toFixed(4)}%): {selectedProposalData.abstainStake.toLocaleString(undefined, {maximumFractionDigits: 3})} LPT
+                                        Abstain ({selectedProposalData.abstainPct.toFixed(4)}%):{' '}
+                                        {selectedProposalData.abstainStake.toLocaleString(undefined, {
+                                            maximumFractionDigits: 3,
+                                        })}{' '}
+                                        LPT
                                     </Typography>
                                 </Box>
                             </Box>
                             <Divider sx={{ my: 2 }} />
 
                             {/* Votes Table */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    mb: 1,
+                                    gap: 1,
+                                }}
+                            >
                                 <HowToVoteIcon color="action" />
                                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                                     Votes
@@ -238,43 +366,58 @@ const VotingHistoryList = () => {
                                             <TableCell sx={{ fontWeight: 'bold' }}>Support</TableCell>
                                             <TableCell sx={{ fontWeight: 'bold' }}>Stake (ETH)</TableCell>
                                             <TableCell sx={{ fontWeight: 'bold' }}>% of Vote</TableCell>
-                                            {/*<TableCell sx={{ fontWeight: 'bold' }}>Timestamp</TableCell>*/}
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {selectedProposalData.votes && selectedProposalData.votes.length > 0 ? (
+                                        {selectedProposalData.votes &&
+                                        selectedProposalData.votes.length > 0 ? (
                                             selectedProposalData.votes.map((vote, idx) => {
-
-                                                // Determine faint background color based on vote.support
+                                                // Color-code background for each vote row using theme
                                                 let bgColor = 'inherit';
                                                 switch (vote.support) {
                                                     case 'Yes':
-                                                        bgColor = alpha(theme.palette.success.main, 0.1); // Very faint green
+                                                        bgColor = alpha(theme.palette.success.main, 0.1);
                                                         break;
                                                     case 'No':
-                                                        bgColor = alpha(theme.palette.error.main, 0.1); // Very faint red
+                                                        bgColor = alpha(theme.palette.error.main, 0.1);
                                                         break;
                                                     case 'Abstain':
-                                                        bgColor = alpha(theme.palette.warning.main, 0.1); // Very faint yellow
+                                                        bgColor = alpha(theme.palette.warning.main, 0.1);
                                                         break;
                                                     default:
                                                         bgColor = 'inherit';
                                                 }
-                                                const voterName = (vote.voterName === '' ? `${vote.voterAddress.substring(0, 6)}...${vote.voterAddress.substring(vote.voterAddress.length - 4)}` : `${vote.voterName}`);
+
+                                                const voterName =
+                                                    vote.voterName === ''
+                                                        ? `${vote.voterAddress.substring(0, 6)}...${vote.voterAddress.substring(
+                                                            vote.voterAddress.length - 4
+                                                        )}`
+                                                        : `${vote.voterName}`;
+
                                                 return (
-                                                    <TableRow
-                                                        key={idx}
-                                                        sx={{
-                                                            backgroundColor: bgColor,
-                                                        }}
-                                                    >
+                                                    <TableRow key={idx} sx={{ backgroundColor: bgColor }}>
                                                         <TableCell>
-                                                            <Grid container alignItems="center" spacing={1} sx={{ display: 'flex', alignItems: 'center' }}>
+                                                            <Grid
+                                                                container
+                                                                alignItems="center"
+                                                                spacing={1}
+                                                                sx={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                }}
+                                                            >
                                                                 <Grid item>
-                                                                    <Avatar src={vote.voterAvatar} alt={voterName} sx={{ width: 24, height: 24 }}/>
+                                                                    <Avatar
+                                                                        src={vote.voterAvatar}
+                                                                        alt={voterName}
+                                                                        sx={{ width: 24, height: 24 }}
+                                                                    />
                                                                 </Grid>
                                                                 <Grid item>
-                                                                    <Typography variant="inherit">{voterName}</Typography>
+                                                                    <Typography variant="inherit">
+                                                                        {voterName}
+                                                                    </Typography>
                                                                 </Grid>
                                                             </Grid>
                                                         </TableCell>
@@ -285,15 +428,19 @@ const VotingHistoryList = () => {
                                                                 : vote.stakeAmount}
                                                         </TableCell>
                                                         <TableCell>
-                                                            {formatNumber(vote.stakeAmount / selectedProposalData.totalStakeVoted * 100)}%
+                                                            {formatNumber(
+                                                                (vote.stakeAmount /
+                                                                    selectedProposalData.totalStakeVoted) *
+                                                                100
+                                                            )}
+                                                            %
                                                         </TableCell>
-                                                        {/*<TableCell>{new Date(vote.castAt * 1000).toLocaleString()}</TableCell>*/}
                                                     </TableRow>
                                                 );
                                             })
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={3} align="center">
+                                                <TableCell colSpan={4} align="center">
                                                     No votes found for this proposal.
                                                 </TableCell>
                                             </TableRow>
@@ -307,7 +454,6 @@ const VotingHistoryList = () => {
             </Box>
         </Box>
     );
-
 };
 
 export default VotingHistoryList;
