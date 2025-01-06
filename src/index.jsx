@@ -17,9 +17,10 @@ import VotingHistoryList from "./VotingHistoryList.jsx";
 import Stats from "./routes/Stats.jsx";
 import Leaderboard from "./routes/Leaderboard.jsx";
 
-console.log("init data services")
-await DataService.init();
-
+(async () => {
+    console.log("init data services");
+    await DataService.init();
+})();
 //load reference data
 const leaderboardLoader=async () => {
     console.log(`[index] leaderboardLoader loading...`);
