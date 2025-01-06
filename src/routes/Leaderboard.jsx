@@ -110,7 +110,7 @@ function Leaderboard() {
         const avatar = orchestrator.avatar;
 
         return (
-            <Link href={`https://tools.livepeer.cloud/orchestrator/${ethAddress}`} target="_blank" underline="none">
+            <Link href={`/orchestrator/${ethAddress}`} target="_blank" underline="none">
                 <Grid container alignItems="center" spacing={1} sx={{ display: 'flex', alignItems: 'center' }}>
                     <Grid item>
                             <Avatar src={avatar} alt={name} sx={{ width: 24, height: 24 }}/>

@@ -12,6 +12,7 @@ import moment from 'moment';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import OrchestratorDetails from "./OrchestratorDetails.jsx";
 import { API_BASE_URL } from "../config.js";
+import {generateColors} from "./chartUtils.js";
 
 /**
  * Utility function to build data points from an iterator.
@@ -29,22 +30,6 @@ const buildDatapoints = (iterator, mapFn) => {
     return dataPoints;
 };
 
-/**
- * Generates an array of random RGBA colors.
- * @param {number} count - Number of colors to generate.
- * @param {number} alpha - Alpha value for RGBA.
- * @returns {Array} - Array of RGBA color strings.
- */
-const generateRandomColors = (count, alpha = 0.2) => {
-    const colors = [];
-    for (let i = 0; i < count; i++) {
-        const r = Math.floor(Math.random() * 255);
-        const g = Math.floor(Math.random() * 255);
-        const b = Math.floor(Math.random() * 255);
-        colors.push(`rgba(${r},${g},${b},${alpha})`);
-    }
-    return colors;
-};
 
 /**
  * Orchestrator Component
@@ -62,11 +47,7 @@ function Orchestrator() {
     const payoutsUsdChartRef = useRef(null);
 
     // Generate separate colors for each chart
-
-    const backgroundColor = generateRandomColors(20, 0.2);
-    const borderColor = generateRandomColors(20, 1);
-    const backgroundColor_usd = generateRandomColors(20, 0.2);
-    const borderColor_usd = generateRandomColors(20, 1);
+    const backgroundColor = generateColors(25);
 
     // Calculate last year's start and end dates
     const lastYearStart = moment().subtract(1, 'years').startOf('year').format('YYYY-MM-DD');
@@ -88,7 +69,8 @@ function Orchestrator() {
      */
     const initializeCharts = () => {
         // Register Chart.js plugins
-        // Chart.register(ChartDataLabels);
+        Chart.register(ChartDataLabels);
+
         const config = {
             type: 'bar',
             data: {
@@ -98,7 +80,7 @@ function Orchestrator() {
                     data: [],
                     fill: false,
                     backgroundColor,
-                    borderColor,
+                    borderColor: backgroundColor.map(color => color.replace('0.6', '1')),
                     borderWidth: 1,
                     stack: 'Stack 0'
                 },
@@ -106,8 +88,8 @@ function Orchestrator() {
                         label: 'Total',
                         data: [],
                         fill: false,
-                        backgroundColor: backgroundColor_usd,
-                        borderColor: borderColor_usd,
+                        backgroundColor: backgroundColor.map((color) => color.replace('0.6', '0.3')),
+                        borderColor: backgroundColor.map((color) => color.replace('0.6', '1')),
                         borderWidth: 1,
                         stack: 'Stack 0'
                     },
@@ -137,30 +119,6 @@ function Orchestrator() {
                     }
             },
         };
-
-        // const commonOptions = {
-        //     responsive: true,
-        //     interaction: {
-        //         intersect: false,
-        //     },
-        //     plugins: {
-        //         title: {
-        //             display: true,
-        //         },
-        //         datalabels: {
-        //             display: false, // Disable data labels globally
-        //         },
-        //     },
-        //     scales: {
-        //         x: {
-        //             stacked: true,
-        //         },
-        //         y: {
-        //             stacked: true,
-        //         },
-        //     },
-        // };
-
         // Initialize ETH Payouts Chart
         if (payoutsRef.current) {
             payoutsChartRef.current = new Chart(payoutsRef.current,config);

@@ -26,6 +26,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryIcon from "@mui/icons-material/History";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {Assessment, NetworkCheck, Webhook} from "@mui/icons-material";
+import HowToVoteIcon from "@mui/icons-material/HowToVote";
 
 const theme = createTheme({
     breakpoints: {
@@ -67,6 +68,7 @@ function App() {
         { text: "Gateways", icon: <Webhook />, path: "/gateways" },
         { text: "Reports", icon: <Assessment />, path: "/reports" },
         { text: "Performance", icon: <NetworkCheck />, path: "/performance/leaderboard" },
+        { text: "Treasury Voting", icon: <HowToVoteIcon />, path: "/vote/history" },
     ];
 
     return (

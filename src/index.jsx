@@ -13,95 +13,16 @@ import Typography from "@mui/material/Typography";
 import TopPayoutReport from "./routes/TopPayoutReport.jsx";
 import Orchestrator from "./routes/Orchestrator.jsx";
 import {API_BASE_URL} from "./config.js";
-import VotingHistoryList from "./VotingHistoryList.jsx";
+import VotingHistoryList from "./routes/VotingHistoryList.jsx";
 import Stats from "./routes/Stats.jsx";
 import Leaderboard from "./routes/Leaderboard.jsx";
-
-(async () => {
-    console.log("init data services");
-    await DataService.init();
-})();
-//load reference data
-const leaderboardLoader=async () => {
-    console.log(`[index] leaderboardLoader loading...`);
-    const regions = await DataService.fetchRegions();
-    const pipelines = await DataService.fetchPipelines();
-    console.log(`[index] leaderboardLoader completed.`);
-    return {regions, pipelines};
-}
-
-const statsLoader=async () => {
-    console.log(`[index] statsLoader loading...`);
-    const pipelines = await DataService.fetchPipelines();
-    console.log(`[index] statsLoader completed.`);
-    return {pipelines};
-}
-
-const proposalLoader=async () => {
-    console.log(`[index] proposalLoader loading...`);
-    const proposals = await DataService.getProposals();
-    // Convert proposals object to an array of [proposalId, proposalData]
-    let proposalEntries = Object.values(proposals);
-    // Sort by timestamp (descending)
-    proposalEntries.sort((a, b) => b.createdAt - a.createdAt);
-
-    console.log(`[index] proposalLoader completed.`);
-    return {proposals,proposalList:proposalEntries};
-}
-
-
-const gatewayLoader=async () => {
-    console.log(`[index] gatewayLoader loading...`);
-    const gateways = await DataService.fetchData(`${API_BASE_URL}/api/gateways`);
-    console.log(`[index] leaderboardLoader completed.`);
-    return {gateways};
-}
-
-
-const dailyPayoutReportLoader=async ({ params }) => {
-    console.log(`[index] dailyPayoutReportLoader loading...`,params);
-    const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/daily/${date}`);
-    console.log(`[index] dailyPayoutReportLoader completed.`);
-    return payoutData;
-}
-
-const weeklyPayoutReportLoader=async ({ params }) => {
-    console.log(`[index] weeklyPayoutReportLoader loading...`,params);
-    const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/weekly/${date}`);
-    console.log(`[index] weeklyPayoutReportLoader completed.`);
-    return payoutData;
-}
-
-const monthlyPayoutReportLoader=async ({ params }) => {
-    console.log(`[index] monthlyPayoutReportLoader loading...`,params);
-    const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/monthly/${date}`);
-    console.log(`[index] monthlyPayoutReportLoader completed.`);
-    return payoutData;
-}
-const topPayoutReportLoader=async ({ params }) => {
-    console.log(`[index] topPayoutReportLoader loading...`,params);
-    // const { date } = params;
-    // const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/monthly/${date}`);
-    console.log(`[index] topPayoutReportLoader completed.`);
-    return [];
-}
-
-const orchestratorsLoader=async () => {
-    console.log(`[index] orchestratorLoader loading...`);
-    const orchestrators = await DataService.fetchData(`${API_BASE_URL}/api/orchestrator`);
-    console.log(`[index] orchestratorLoader completed.`);
-    return {orchestrators};
-}
-const orchestratorLoader=async ({params}) => {
-    console.log(`[index] orchestratorLoader loading...`,params);
-    const { eth_address } = params;
-    const orchestrator = await DataService.fetchData(`${API_BASE_URL}/api/orchestrator/${eth_address}`);
-    console.log(`[index] orchestratorLoader completed.`);
-    return {orchestrator};
-}
+import {
+    dailyPayoutReportLoader,
+    gatewayLoader, leaderboardLoader, monthlyPayoutReportLoader,
+    orchestratorLoader,
+    orchestratorsLoader, proposalLoader, statsLoader, topPayoutReportLoader,
+    weeklyPayoutReportLoader
+} from "./loaders/index.js";
 
 const currentDate = new Date().toISOString().split('T')[0];
 const router = createBrowserRouter(
@@ -137,7 +58,6 @@ const router = createBrowserRouter(
                 index
                 path="reports"
                 element={<Reports />}
-                // loader={gatewayLoader}
                 hydrateFallbackElement={<CircularProgress />}
             />
             <Route
