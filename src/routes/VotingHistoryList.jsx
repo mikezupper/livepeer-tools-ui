@@ -16,57 +16,20 @@ import {
     Avatar,
     Grid,
     Chip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
     Button
 } from '@mui/material';
 import BallotIcon from '@mui/icons-material/Ballot';
 import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import {ArrowForward, Description, Poll, ThumbDown, ThumbsUpDown, ThumbUp} from '@mui/icons-material';
+import { ArrowForward, Description, Poll, ThumbDown, ThumbsUpDown, ThumbUp } from '@mui/icons-material';
 import { useLoaderData } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
-
-/**
- * Return a background color based on the proposal status and MUI theme.
- * For example, “Active” -> a light info color, “Defeated” -> a light error color, etc.
- */
-function getProposalColor(status, value, theme) {
-    let colorVal = value ? value : 1;
-    switch (status) {
-        case 'Active':
-            // A light “info” hue
-            return alpha(theme.palette.info.light, colorVal);
-        case 'Executed':
-            // A light “success” hue
-            return alpha(theme.palette.success.light, colorVal);
-        case 'Defeated':
-            // A light “error” hue
-            return alpha(theme.palette.error.light, colorVal);
-        default:
-            // A light grey hue for other statuses
-            return alpha(theme.palette.grey[400], colorVal);
-    }
-}
-
-/** Helper to get a solid color (not background) for the left border and status chip. */
-const getStatusColor = (status, theme) => {
-    switch (status) {
-        case 'Canceled':
-            return theme.palette.error.main;
-        case 'Executed':
-            return theme.palette.success.main;
-        case 'Active':
-        case 'Created':
-        default:
-            return theme.palette.info.main;
-    }
-};
-
-const formatNumber = (number) => {
-    return number.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-};
+import AllVotesByVoter from './AllVotesByVoter.jsx';
+import { formatNumber, getProposalColor, getStatusColor } from './votingUtils.jsx';
 
 const VotingHistoryList = () => {
     const { proposals } = useLoaderData();
@@ -74,6 +37,10 @@ const VotingHistoryList = () => {
     const selectedProposalData = selectedProposalId
         ? proposals.find((p) => p.id === selectedProposalId)
         : null;
+
+    // Store an object for the selected voter
+    // e.g. { address: '0x...', name: 'Alice', avatar: 'someUrl' } or null
+    const [selectedVoter, setSelectedVoter] = useState(null);
 
     const theme = useTheme();
 
@@ -94,7 +61,6 @@ const VotingHistoryList = () => {
                     borderRight: { xs: 'none', md: `1px solid ${theme.palette.divider}` },
                     backgroundColor: theme.palette.background.paper,
                     boxShadow: { xs: theme.shadows[1], md: 'none' },
-                    // Remove scrolling
                     overflow: 'hidden',
                 }}
             >
@@ -139,8 +105,7 @@ const VotingHistoryList = () => {
                                 >
                                     <TableCell
                                         sx={{
-                                            fontWeight:
-                                                proposal.id === selectedProposalId ? 'bold' : 'normal',
+                                            fontWeight: proposal.id === selectedProposalId ? 'bold' : 'normal',
                                         }}
                                     >
                                         <Typography variant="subtitle2">
@@ -170,7 +135,6 @@ const VotingHistoryList = () => {
                 sx={{
                     width: { xs: '100%', md: '70%' },
                     p: 2,
-                    // Remove scrolling
                     overflow: 'hidden',
                 }}
             >
@@ -243,6 +207,7 @@ const VotingHistoryList = () => {
                                         : selectedProposalData.proposerAddress}
                                 </Typography>
                             </Box>
+
                             <Box
                                 sx={{
                                     mt: 1,
@@ -266,6 +231,7 @@ const VotingHistoryList = () => {
                                     </Button>
                                 </Typography>
                             </Box>
+
                             <Box
                                 sx={{
                                     mt: 1,
@@ -282,6 +248,7 @@ const VotingHistoryList = () => {
                                         : selectedProposalData.totalStakeVoted}
                                 </Typography>
                             </Box>
+
                             <Box sx={{ mt: 2 }}>
                                 <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                                     Total Support: {selectedProposalData.forPct.toFixed(4)}%
@@ -354,6 +321,7 @@ const VotingHistoryList = () => {
                                     Votes
                                 </Typography>
                             </Box>
+
                             <TableContainer component={Paper} variant="outlined">
                                 <Table size="small">
                                     <TableHead>
@@ -364,7 +332,9 @@ const VotingHistoryList = () => {
                                         >
                                             <TableCell sx={{ fontWeight: 'bold' }}>Voter</TableCell>
                                             <TableCell sx={{ fontWeight: 'bold' }}>Support</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>Stake (ETH)</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold' }}>
+                                                Stake (ETH)
+                                            </TableCell>
                                             <TableCell sx={{ fontWeight: 'bold' }}>% of Vote</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -372,7 +342,6 @@ const VotingHistoryList = () => {
                                         {selectedProposalData.votes &&
                                         selectedProposalData.votes.length > 0 ? (
                                             selectedProposalData.votes.map((vote, idx) => {
-                                                // Color-code background for each vote row using theme
                                                 let bgColor = 'inherit';
                                                 switch (vote.support) {
                                                     case 'Yes':
@@ -393,10 +362,24 @@ const VotingHistoryList = () => {
                                                         ? `${vote.voterAddress.substring(0, 6)}...${vote.voterAddress.substring(
                                                             vote.voterAddress.length - 4
                                                         )}`
-                                                        : `${vote.voterName}`;
+                                                        : vote.voterName;
 
                                                 return (
-                                                    <TableRow key={idx} sx={{ backgroundColor: bgColor }}>
+                                                    <TableRow
+                                                        key={idx}
+                                                        sx={{
+                                                            backgroundColor: bgColor,
+                                                            cursor: 'pointer', // indicate clickable row
+                                                        }}
+                                                        onClick={() => {
+                                                            // Store an object for the selected voter
+                                                            setSelectedVoter({
+                                                                address: vote.voterAddress,
+                                                                name: vote.voterName,
+                                                                avatar: vote.voterAvatar,
+                                                            });
+                                                        }}
+                                                    >
                                                         <TableCell>
                                                             <Grid
                                                                 container
@@ -448,6 +431,48 @@ const VotingHistoryList = () => {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
+
+                            {/* The modal (or Dialog) for all votes by the selected voter */}
+                            <Dialog
+                                open={Boolean(selectedVoter)}
+                                onClose={() => setSelectedVoter(null)}
+                                fullWidth
+                                maxWidth="md"
+                            >
+                                {selectedVoter && (
+                                    <DialogTitle>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography variant="h6" component="span">
+                                                All Votes by{' '}
+                                            </Typography>
+                                            <Avatar
+                                                src={selectedVoter.avatar}
+                                                alt={
+                                                    selectedVoter.name ||
+                                                    `${selectedVoter.address?.substring(0, 6)}...`
+                                                }
+                                                sx={{ width: 24, height: 24 }}
+                                            />
+                                            <Typography variant="h5" component="span">
+                                                {selectedVoter.name && selectedVoter.name.trim() !== ''
+                                                    ? selectedVoter.name
+                                                    : `${selectedVoter.address.substring(0, 6)}...${selectedVoter.address.substring(
+                                                        selectedVoter.address.length - 4
+                                                    )}`}
+                                            </Typography>
+                                        </Box>
+                                    </DialogTitle>
+                                )}
+                                <DialogContent>
+                                    <AllVotesByVoter
+                                        voterAddress={selectedVoter?.address}
+                                        proposals={proposals}
+                                    />
+                                </DialogContent>
+                                <DialogActions>
+                                    <Button onClick={() => setSelectedVoter(null)}>Close</Button>
+                                </DialogActions>
+                            </Dialog>
                         </CardContent>
                     </Card>
                 )}
