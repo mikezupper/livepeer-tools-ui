@@ -321,6 +321,9 @@ const VotingHistoryList = () => {
                                     Votes
                                 </Typography>
                             </Box>
+                            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                                Click on any voter's row to see all of their votes.
+                            </Typography>
 
                             <TableContainer component={Paper} variant="outlined">
                                 <Table size="small">
