@@ -432,6 +432,32 @@ export default class DataServices {
                 return accumulator + vote.stakeAmount;
             }, 0);
 
+            // 1) Sum stake by support
+            const forStake = votes
+                .filter((v) => v.support === 'Yes')
+                .reduce((acc, v) => acc + v.stakeAmount, 0);
+            const againstStake = votes
+                .filter((v) => v.support === 'No')
+                .reduce((acc, v) => acc + v.stakeAmount, 0);
+            const abstainStake = votes
+                .filter((v) => v.support === 'Abstain')
+                .reduce((acc, v) => acc + v.stakeAmount, 0);
+
+            const totalVoted = forStake + againstStake + abstainStake;
+
+            // 2) Compute percentages (handle division by zero if there are no votes)
+            const forPct = totalVoted > 0 ? (forStake / totalVoted) * 100 : 0;
+            const againstPct = totalVoted > 0 ? (againstStake / totalVoted) * 100 : 0;
+            const abstainPct = totalVoted > 0 ? (abstainStake / totalVoted) * 100 : 0;
+
+            // 3) Attach them to the proposal object
+            //    (you can store these however you like, e.g., in a nested object)
+            proposal.forStake = forStake;         // e.g., 6_341_000
+            proposal.againstStake = againstStake; // e.g., 175_000
+            proposal.abstainStake = abstainStake; // e.g., 0
+            proposal.forPct = forPct;             // e.g., 97.3144
+            proposal.againstPct = againstPct;     // e.g., 2.6856
+            proposal.abstainPct = abstainPct;     // e.g., 0
         }
         proposals.sort((a, b) => b.createdAt - a.createdAt);
 

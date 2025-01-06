@@ -19,8 +19,10 @@ import {
 import BallotIcon from '@mui/icons-material/Ballot';
 import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import { useLoaderData } from 'react-router-dom';
-import { alpha } from '@mui/material/styles'; // Import alpha utility
+import { useLoaderData} from 'react-router-dom';
+import { alpha } from '@mui/material/styles';
+import Button from "@mui/material/Button";
+import {ArrowForward, Poll, ThumbDown, ThumbsUpDown, ThumbUp} from "@mui/icons-material"; // Import alpha utility
 
 // Utility function for formatting numbers
 const formatNumber = (number) => {
@@ -169,12 +171,51 @@ const VotingHistoryList = () => {
                                 </Typography>
                             </Box>
                             <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <HowToVoteIcon fontSize="small" color="action" />
+                                <PersonOutlineIcon fontSize="small" color="action" />
+                                <Typography variant="body2">
+                                    <strong>Original Proposal:</strong>
+                                    <Button
+                                        size="small"
+                                        color="primary"
+                                        endIcon={<ArrowForward />}
+                                        target="_blank"
+                                        href={`https://explorer.livepeer.org/treasury/${selectedProposalData.id}`}
+                                        rel="noopener"
+                                    >
+                                        View on Livepeer
+                                    </Button>
+                                </Typography>
+                            </Box>
+                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Poll fontSize="small" color="action" />
                                 <Typography variant="body2">
                                     <strong>Total Stake Voted:</strong> {typeof selectedProposalData.totalStakeVoted === 'number'
                                     ? formatNumber(selectedProposalData.totalStakeVoted)
                                     : selectedProposalData.totalStakeVoted}
                                 </Typography>
+                            </Box>
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                    Total Support: {selectedProposalData.forPct.toFixed(4)}%
+                                </Typography>
+                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <ThumbUp fontSize="small" color="action" />
+                                    <Typography variant="body2">
+                                        For ({selectedProposalData.forPct.toFixed(4)}%): {selectedProposalData.forStake.toLocaleString(undefined, {maximumFractionDigits: 3})} LPT
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <ThumbDown fontSize="small" color="action" />
+                                    <Typography variant="body2">
+                                        Against ({selectedProposalData.againstPct.toFixed(4)}%): {selectedProposalData.againstStake.toLocaleString(undefined, {maximumFractionDigits: 3})} LPT
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <ThumbsUpDown fontSize="small" color="action" />
+                                    <Typography variant="body2">
+                                        Abstain ({selectedProposalData.abstainPct.toFixed(4)}%): {selectedProposalData.abstainStake.toLocaleString(undefined, {maximumFractionDigits: 3})} LPT
+                                    </Typography>
+                                </Box>
                             </Box>
                             <Divider sx={{ my: 2 }} />
 
