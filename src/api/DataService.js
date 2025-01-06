@@ -49,8 +49,6 @@ const firstTreasuryProposal = 162890764;
 const LAST_PROPOSAL_BLOCK_KEY = 'lastProposalProcessedBlock';
 const LAST_VOTE_BLOCK_KEY = 'lastVoteProcessedBlock';
 
-const ORCHESTRATOR_API_URL = "https://tools.livepeer.cloud/api/orchestrator";
-
 /**
  * Retrieves the last processed proposal block from metadata.
  * If not present, initializes it with `firstTreasuryProposal`.
@@ -323,10 +321,10 @@ async function fetchAndStoreVotes() {
 
 // 7. Fetch and store Orchestrator data
 async function fetchAndStoreOrchestrators() {
-    console.log(`Fetching orchestrator data from ${ORCHESTRATOR_API_URL}`);
+    console.log(`Fetching orchestrator data from ${orchDetailsURL}`);
 
     try {
-        const response = await fetch(ORCHESTRATOR_API_URL);
+        const response = await fetch(orchDetailsURL);
         const orchestrators = await response.json();
 
         if (!Array.isArray(orchestrators)) {

@@ -14,181 +14,129 @@ import {
     Alert,
 } from '@mui/material';
 import Chart from 'chart.js/auto';
-import moment from 'moment';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-import {generateColors} from "./chartUtils.js";
-import {API_BASE_URL} from "../config.js";
+import { generateColors } from "./chartUtils.js";
+import moment from 'moment';
 
-/**
- * TopPayoutReport Component
- * Renders a report with interactive charts for ETH, USD, and Tickets payouts.
- * Utilizes Material-UI for layout and styling, and Chart.js for data visualization.
- */
+import {useLoaderData} from "react-router-dom";
+import {topPayoutReportLoader} from "../loaders/index.js";
+
 const TopPayoutReport = () => {
-    // State variables for form inputs
+    const data = useLoaderData();
     const [startDate, setStartDate] = useState(moment().subtract(7, 'days').format('YYYY-MM-DD'));
     const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
     const [offset, setOffset] = useState('0');
     const [sort, setSort] = useState('total');
     const [jobType, setJobType] = useState('both');
 
-    // Refs for canvas elements
+    const [payoutData, setPayoutData] = useState(data);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [openSnackbar, setOpenSnackbar] = useState(false);
+
     const ethRef = useRef(null);
     const usdRef = useRef(null);
     const ticketsRef = useRef(null);
+    const chartsRef = useRef({ eth: null, usd: null, tickets: null });
 
-    // Chart instances stored in refs
-    const chartsRef = useRef({
-        eth: null,
-        usd: null,
-        tickets: null,
-    });
-
-    // State for loading and error
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    // Snackbar state
-    const [openSnackbar, setOpenSnackbar] = useState(false);
-
-    const ethColors = generateColors(25); // Assuming top 25 entries
+    const ethColors = generateColors(25);
     const usdColors = generateColors(25);
-    const ticketsColors = ['rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)']; // Two distinct colors
+    const ticketsColors = ['rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'];
 
-    /**
-     * Fetches payout data from the API and updates the charts.
-     */
-    const fetchAndUpdateCharts = useCallback(
-        async () => {
-            setLoading(true);
-            const body = { start: startDate, end: endDate, offset: parseInt(offset), sort, jobType };
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/payout/report`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    method: 'POST',
-                    body: JSON.stringify(body),
-                });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const json = await response.json();
-                updateCharts(json);
-            } catch (error) {
-                console.error('Error fetching payout report:', error);
-                setError(error.message);
-                setOpenSnackbar(true);
-            } finally {
-                setLoading(false);
-            }
-        },
-        [startDate, endDate, offset, sort, jobType]
-    );
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const newData = await topPayoutReportLoader({
+                params: { startDate, endDate, offset, sort, jobType },
+            });
+            setPayoutData(newData);
+        } catch (err) {
+            console.error('Error fetching payoutData:', err);
+            setError(err.message);
+            setOpenSnackbar(true);
+        } finally {
+            setLoading(false);
+        }
+    }, [startDate, endDate, offset, sort, jobType]);
 
-    /**
-     * Initializes all charts on component mount.
-     */
     useEffect(() => {
-        // Register Chart.js plugins
-        Chart.register(ChartDataLabels);
+        fetchData();
+    }, [fetchData]);
 
-        // Common chart options
+    useEffect(() => {
+        if (!payoutData) return;
+
+        Chart.register(ChartDataLabels);
         const commonOptions = {
             responsive: true,
-            maintainAspectRatio: false, // Allows the chart to fill its container
+            maintainAspectRatio: false,
             plugins: {
-                datalabels: {
-                    display: false, // Disable data labels
-                },
-                legend: {
-                    position: 'bottom',
-                },
+                datalabels: { display: false },
+                legend: { position: 'bottom' },
             },
-            scales: {
-                y: {
-                    stacked: true,
-                    position: "top",
-                    // beginAtZero: true,
-                }
-            },
-            indexAxis: 'y', // Makes the chart horizontal
+            scales: { y: { stacked: true, position: "top" } },
+            indexAxis: 'y',
         };
 
-        // Initialize ETH Chart
-        if (ethRef.current) {
+        if (ethRef.current && payoutData.eth) {
             chartsRef.current.eth = new Chart(ethRef.current, {
                 type: 'bar',
                 data: {
-                    labels: [],
+                    labels: payoutData.eth.map((entry) => entry.recipient_name),
                     datasets: [
                         {
                             label: 'ETH Total',
-                            data: [],
+                            data: payoutData.eth.map((entry) => entry.value),
                             backgroundColor: ethColors,
-                            borderColor: ethColors.map(color => color.replace('0.6', '1')),
+                            borderColor: ethColors.map((color) => color.replace('0.6', '1')),
                             borderWidth: 1,
                         },
                         {
                             label: 'Orch Share',
-                            data: [],
-                            backgroundColor: ethColors.map(color => color.replace('0.6', '0.3')), // Lighter color
-                            borderColor: ethColors.map(color => color.replace('0.6', '1')),
+                            data: payoutData.eth.map((entry) => entry.take_home_value),
+                            backgroundColor: ethColors.map((color) => color.replace('0.6', '0.3')),
+                            borderColor: ethColors.map((color) => color.replace('0.6', '1')),
                             borderWidth: 1,
                         },
                     ],
                 },
                 options: {
                     ...commonOptions,
-                    plugins: {
-                        ...commonOptions.plugins,
-                        title: {
-                            display: true,
-                            text: 'ETH Payouts',
-                        },
-                    },
+                    plugins: { ...commonOptions.plugins, title: { display: true, text: 'ETH Payouts' } },
                 },
             });
         }
 
-        // Initialize USD Chart
-        if (usdRef.current) {
+        if (usdRef.current && payoutData.usd) {
             chartsRef.current.usd = new Chart(usdRef.current, {
                 type: 'bar',
                 data: {
-                    labels: [],
+                    labels: payoutData.usd.map((entry) => entry.recipient_name),
                     datasets: [
                         {
                             label: 'USD Total',
-                            data: [],
+                            data: payoutData.usd.map((entry) => entry.value),
                             backgroundColor: usdColors,
-                            borderColor: usdColors.map(color => color.replace('0.6', '1')),
+                            borderColor: usdColors.map((color) => color.replace('0.6', '1')),
                             borderWidth: 1,
                         },
                         {
                             label: 'Orch Share',
-                            data: [],
-                            backgroundColor: usdColors.map(color => color.replace('0.6', '0.3')), // Lighter color
-                            borderColor: usdColors.map(color => color.replace('0.6', '1')),
+                            data: payoutData.usd.map((entry) => entry.take_home_value),
+                            backgroundColor: usdColors.map((color) => color.replace('0.6', '0.3')),
+                            borderColor: usdColors.map((color) => color.replace('0.6', '1')),
                             borderWidth: 1,
                         },
                     ],
                 },
                 options: {
                     ...commonOptions,
-                    plugins: {
-                        ...commonOptions.plugins,
-                        title: {
-                            display: true,
-                            text: 'USD Payouts',
-                        },
-                    },
+                    plugins: { ...commonOptions.plugins, title: { display: true, text: 'USD Payouts' } },
                 },
             });
         }
 
-        // Initialize Tickets Chart
-        if (ticketsRef.current) {
+        if (ticketsRef.current && payoutData.tickets) {
             chartsRef.current.tickets = new Chart(ticketsRef.current, {
                 type: 'bar',
                 data: {
@@ -196,88 +144,32 @@ const TopPayoutReport = () => {
                     datasets: [
                         {
                             label: '# of Payouts',
-                            data: [0, 0],
+                            data: [
+                                payoutData.usd.length > 0 ? payoutData.usd[0].value : 0,
+                                payoutData.tickets.length > 0 ? payoutData.tickets[0].value : 0,
+                            ],
                             backgroundColor: ticketsColors,
-                            borderColor: ticketsColors.map(color => color.replace('0.6', '1')),
+                            borderColor: ticketsColors.map((color) => color.replace('0.6', '1')),
                             borderWidth: 1,
                         },
                     ],
                 },
                 options: {
                     ...commonOptions,
-                    plugins: {
-                        ...commonOptions.plugins,
-                        title: {
-                            display: true,
-                            text: 'Tickets Payouts',
-                        },
-                    },
-                    indexAxis: 'y', // Makes the chart horizontal
+                    plugins: { ...commonOptions.plugins, title: { display: true, text: 'Tickets Payouts' } },
                 },
             });
         }
 
-        // Fetch initial data
-        fetchAndUpdateCharts();
-
-        // Cleanup function to destroy charts on unmount
         return () => {
             Object.values(chartsRef.current).forEach((chart) => {
                 if (chart) chart.destroy();
             });
         };
-    }, [fetchAndUpdateCharts, ethColors, usdColors, ticketsColors]);
+    }, [payoutData, ethColors, usdColors, ticketsColors]);
 
-    /**
-     * Fetches and updates charts whenever form inputs change.
-     */
-    useEffect(() => {
-        fetchAndUpdateCharts();
-    }, [fetchAndUpdateCharts]);
-
-    /**
-     * Updates all charts with the fetched JSON data.
-     * @param {Object} json - The JSON data returned from the API.
-     */
-    const updateCharts = (json) => {
-        // Update USD Chart
-        if (chartsRef.current.usd) {
-            chartsRef.current.usd.data.labels = json.usd.map((entry) => entry.recipient_name);
-            chartsRef.current.usd.data.datasets[0].data = json.usd.map((entry) => entry.value);
-            chartsRef.current.usd.data.datasets[1].data = json.usd.map((entry) => entry.take_home_value);
-            chartsRef.current.usd.update();
-        }
-
-        // Update ETH Chart
-        if (chartsRef.current.eth) {
-            chartsRef.current.eth.data.labels = json.eth.map((entry) => entry.recipient_name);
-            chartsRef.current.eth.data.datasets[0].data = json.eth.map((entry) => entry.value);
-            chartsRef.current.eth.data.datasets[1].data = json.eth.map((entry) => entry.take_home_value);
-            chartsRef.current.eth.update();
-        }
-
-        // Update Tickets Chart
-        if (chartsRef.current.tickets) {
-            chartsRef.current.tickets.data.datasets[0].data = [
-                json.usd.length > 0 ? json.usd[0].value : 0,
-                json.tickets.length > 0 ? json.tickets[0].value : 0,
-            ];
-            chartsRef.current.tickets.data.datasets[0].label = `ETH ${
-                json.eth.length > 0 ? json.eth[0].value : 0
-            } Total`;
-            chartsRef.current.tickets.update();
-        }
-    };
-
-    /**
-     * Handles closing the Snackbar.
-     * @param {Object} event - The event source of the callback.
-     * @param {string} reason - The reason for the callback.
-     */
     const handleCloseSnackbar = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
+        if (reason === 'clickaway') return;
         setOpenSnackbar(false);
     };
 
@@ -509,7 +401,6 @@ const TopPayoutReport = () => {
                     {error}
                 </Alert>
             </Snackbar>
-        </Container>)
-}
-
+        </Container>);
+};
 export default TopPayoutReport;

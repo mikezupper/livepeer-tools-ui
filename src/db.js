@@ -1,7 +1,7 @@
 // db.js
 import Dexie from 'dexie';
 
-const db = new Dexie('GovernorDB');
+const db = new Dexie('LivepeerToolDB');
 
 db.version(1).stores({
     proposals: 'id, title, description, proposerAddress, createdAt',
