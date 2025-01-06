@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     AppBar,
     Box,
-    Collapse,
     CssBaseline,
     Drawer,
     IconButton,
@@ -15,17 +14,14 @@ import {
     Container,
     createTheme,
     ThemeProvider,
-    Stack
+    useMediaQuery,
+    useTheme
 } from "@mui/material";
 import { Link, Outlet } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
 import HomeIcon from "@mui/icons-material/Home";
 import GroupsIcon from "@mui/icons-material/Groups";
-import HistoryIcon from "@mui/icons-material/History";
-import SettingsIcon from "@mui/icons-material/Settings";
-import {Assessment, NetworkCheck, Webhook} from "@mui/icons-material";
+import { Assessment, NetworkCheck, Webhook } from "@mui/icons-material";
 import HowToVoteIcon from "@mui/icons-material/HowToVote";
 
 const theme = createTheme({
@@ -56,11 +52,24 @@ const theme = createTheme({
 });
 
 function App() {
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [reportsOpen, setReportsOpen] = useState(false);
+    const muiTheme = useTheme();
+    // Detect if we are on mobile (sm or below)
+    const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
-    const toggleDrawer = () => setDrawerOpen(!drawerOpen);
-    const toggleReports = () => setReportsOpen(!reportsOpen);
+    // Keep drawer open by default on non-mobile, closed on mobile
+    const [drawerOpen, setDrawerOpen] = useState(!isMobile);
+
+    // Whenever viewport changes between mobile and desktop, reset drawer state
+    useEffect(() => {
+        setDrawerOpen(!isMobile);
+    }, [isMobile]);
+
+    const toggleDrawer = () => {
+        // Only allow toggling on mobile; for desktop, keep it open
+        if (isMobile) {
+            setDrawerOpen(!drawerOpen);
+        }
+    };
 
     const menuItems = [
         { text: "Home", icon: <HomeIcon />, path: "/" },
@@ -76,11 +85,20 @@ function App() {
             <CssBaseline />
             <Box sx={{ display: "flex" }}>
                 {/* AppBar */}
-                <AppBar position="fixed">
+                <AppBar>
                     <Toolbar>
-                        <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer}>
-                            <MenuIcon />
-                        </IconButton>
+                        {/* Only show menu toggle icon on mobile */}
+                        {isMobile && (
+                            <IconButton
+                                edge="start"
+                                color="inherit"
+                                aria-label="menu"
+                                onClick={toggleDrawer}
+                            >
+                                <MenuIcon />
+                            </IconButton>
+                        )}
+
                         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                             Livepeer Tools by Livepeer.Cloud SPE
                         </Typography>
@@ -88,10 +106,27 @@ function App() {
                 </AppBar>
 
                 {/* Drawer */}
-                <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer}>
-                    <Box sx={{ width: 250 }} role="presentation" onClick={toggleDrawer} onKeyDown={toggleDrawer}>
+                <Drawer
+                    variant={isMobile ? "temporary" : "permanent"}
+                    open={drawerOpen}
+                    onClose={toggleDrawer}
+                    sx={{
+                        "& .MuiDrawer-paper": {
+                            width: 250,
+                            boxSizing: "border-box",
+                            // You could also add a top offset if you want the drawer below the AppBar:
+                            marginTop: isMobile ? 0 : '64px',
+                        },
+                    }}
+                >
+                    <Box
+                        role="presentation"
+                        // On mobile, clicking inside the drawer might close it if you want
+                        // but typically you'd keep the toggle on a ListItem if you do.
+                        onClick={isMobile ? toggleDrawer : undefined}
+                        onKeyDown={isMobile ? toggleDrawer : undefined}
+                    >
                         <List>
-                            {/* Main Menu Items */}
                             {menuItems.map((item, index) => (
                                 <ListItem key={index} component={Link} to={item.path} button>
                                     <ListItemIcon>{item.icon}</ListItemIcon>
