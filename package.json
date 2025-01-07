@@ -3,10 +3,8 @@
   "private": true,
   "scripts": {
     "clean": "rm -Rf packages/*/dist/ packages/*/node_modules/ rm -Rf packages/tools-ui/public/ai-generator",
-    "prepare": "mkdir -p packages/tools-ui/public/ai-generator",
     "build:ai-generator-ui": "cd packages/ai-generator-ui && npm install && npm run build",
-    "copy:ai-generator-dist": "cp -Rf packages/ai-generator-ui/dist packages/tools-ui/public/ai-generator",
     "build:tools-ui": "cd packages/tools-ui && npm install && npm run build",
-    "build": "npm run clean prepare && npm run build:ai-generator-ui && npm run copy:ai-generator-dist && npm run build:tools-ui"
+    "build": "npm run clean && npm run build:ai-generator-ui && npm run build:tools-ui"
   }
 }
