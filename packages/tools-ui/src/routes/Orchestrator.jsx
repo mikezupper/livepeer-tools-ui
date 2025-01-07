@@ -65,7 +65,7 @@ function Orchestrator() {
 
 
     /**
-     * Initializes all charts: ETH Payouts, USD Payouts, and Tickets.
+     * Initializes all charts: ETH Payouts, USD Payouts.
      */
     const initializeCharts = () => {
         // Register Chart.js plugins
@@ -85,7 +85,7 @@ function Orchestrator() {
                     stack: 'Stack 0'
                 },
                     {
-                        label: 'Total',
+                        label: 'Delegates Share',
                         data: [],
                         fill: false,
                         backgroundColor: backgroundColor.map((color) => color.replace('0.6', '0.3')),
@@ -109,14 +109,14 @@ function Orchestrator() {
                         display: false, // Disable data labels globally
                     },
                 },
-                    scales: {
-                        x: {
-                            stacked: true,
-                        },
-                        y: {
-                            stacked: true,
-                        },
-                    }
+                scales: {
+                    x: {
+                        stacked: true,
+                    },
+                    y: {
+                        stacked: true,
+                    },
+                }
             },
         };
         // Initialize ETH Payouts Chart
@@ -175,16 +175,27 @@ function Orchestrator() {
         const dataPointsUsdTotal = buildDatapoints(months_usd.values(), iterator => iterator.value);
         const dataPointsUsdTakeHome = buildDatapoints(months_usd_take_home.values(), iterator => iterator.value);
 
-        // Update ETH Payouts Chart
+        // Calculate differences for "Rest" portion
+        const dataPointsDiff = dataPointsTotal.map((totalVal, idx) => {
+            const shareVal = dataPointsTakeHome[idx] || 0;
+            return totalVal - shareVal;
+        });
+
+        const dataPointsUsdDiff = dataPointsUsdTotal.map((totalVal, idx) => {
+            const shareVal = dataPointsUsdTakeHome[idx] || 0;
+            return totalVal - shareVal;
+        });
+
+        // Update ETH Payouts Chart with stacked portions: Orch Share and Rest
         payouts.data.labels = labels;
         payouts.data.datasets[0].data = dataPointsTakeHome;
-        payouts.data.datasets[1].data = dataPointsTotal;
+        payouts.data.datasets[1].data = dataPointsDiff;
         payouts.update();
 
-        // Update USD Payouts Chart
+        // Update USD Payouts Chart similarly
         payoutsUsd.data.labels = labels;
         payoutsUsd.data.datasets[0].data = dataPointsUsdTakeHome;
-        payoutsUsd.data.datasets[1].data = dataPointsUsdTotal;
+        payoutsUsd.data.datasets[1].data = dataPointsUsdDiff;
         payoutsUsd.update();
     };
 
@@ -330,6 +341,7 @@ function Orchestrator() {
             setIsTicketsDownloading(false);
         }
     };
+
     return (
         <Box sx={{ py: 4 }}>
             <Typography variant="h4" gutterBottom>

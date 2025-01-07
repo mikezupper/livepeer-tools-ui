@@ -78,64 +78,85 @@ const TopPayoutReport = () => {
             indexAxis: 'y',
         };
 
+        // ETH Chart Setup with Stacked "Orch Share" and "Delegates Share"
         if (ethRef.current && payoutData.eth) {
+            const ethTakeHome = payoutData.eth.map(entry => entry.take_home_value);
+            const ethTotal = payoutData.eth.map(entry => entry.value);
+            const ethRest = ethTotal.map((total, idx) => total - ethTakeHome[idx]);
+
             chartsRef.current.eth = new Chart(ethRef.current, {
                 type: 'bar',
                 data: {
-                    labels: payoutData.eth.map((entry) => entry.recipient_name),
+                    labels: payoutData.eth.map(entry => entry.recipient_name),
                     datasets: [
                         {
-                            label: 'ETH Total',
-                            data: payoutData.eth.map((entry) => entry.value),
+                            label: 'Orch Share',
+                            data: ethTakeHome,
                             backgroundColor: ethColors,
-                            borderColor: ethColors.map((color) => color.replace('0.6', '1')),
+                            borderColor: ethColors.map(color => color.replace('0.6', '1')),
                             borderWidth: 1,
+                            stack: 'Stack 0',
                         },
                         {
-                            label: 'Orch Share',
-                            data: payoutData.eth.map((entry) => entry.take_home_value),
-                            backgroundColor: ethColors.map((color) => color.replace('0.6', '0.3')),
-                            borderColor: ethColors.map((color) => color.replace('0.6', '1')),
+                            label: 'Delegates Share',
+                            data: ethRest,
+                            backgroundColor: ethColors.map(color => color.replace('0.6', '0.3')),
+                            borderColor: ethColors.map(color => color.replace('0.6', '1')),
                             borderWidth: 1,
+                            stack: 'Stack 0',
                         },
                     ],
                 },
                 options: {
                     ...commonOptions,
-                    plugins: { ...commonOptions.plugins, title: { display: true, text: 'ETH Payouts' } },
+                    plugins: {
+                        ...commonOptions.plugins,
+                        title: { display: true, text: 'ETH Payouts' }
+                    },
                 },
             });
         }
 
+        // USD Chart Setup with Stacked "Orch Share" and "Rest"
         if (usdRef.current && payoutData.usd) {
+            const usdTakeHome = payoutData.usd.map(entry => entry.take_home_value);
+            const usdTotal = payoutData.usd.map(entry => entry.value);
+            const usdRest = usdTotal.map((total, idx) => total - usdTakeHome[idx]);
+
             chartsRef.current.usd = new Chart(usdRef.current, {
                 type: 'bar',
                 data: {
-                    labels: payoutData.usd.map((entry) => entry.recipient_name),
+                    labels: payoutData.usd.map(entry => entry.recipient_name),
                     datasets: [
                         {
-                            label: 'USD Total',
-                            data: payoutData.usd.map((entry) => entry.value),
+                            label: 'Orch Share',
+                            data: usdTakeHome,
                             backgroundColor: usdColors,
-                            borderColor: usdColors.map((color) => color.replace('0.6', '1')),
+                            borderColor: usdColors.map(color => color.replace('0.6', '1')),
                             borderWidth: 1,
+                            stack: 'Stack 0',
                         },
                         {
-                            label: 'Orch Share',
-                            data: payoutData.usd.map((entry) => entry.take_home_value),
-                            backgroundColor: usdColors.map((color) => color.replace('0.6', '0.3')),
-                            borderColor: usdColors.map((color) => color.replace('0.6', '1')),
+                            label: 'Delegates Share',
+                            data: usdRest,
+                            backgroundColor: usdColors.map(color => color.replace('0.6', '0.3')),
+                            borderColor: usdColors.map(color => color.replace('0.6', '1')),
                             borderWidth: 1,
+                            stack: 'Stack 0',
                         },
                     ],
                 },
                 options: {
                     ...commonOptions,
-                    plugins: { ...commonOptions.plugins, title: { display: true, text: 'USD Payouts' } },
+                    plugins: {
+                        ...commonOptions.plugins,
+                        title: { display: true, text: 'USD Payouts' }
+                    },
                 },
             });
         }
 
+        // Tickets Chart Setup (unchanged)
         if (ticketsRef.current && payoutData.tickets) {
             chartsRef.current.tickets = new Chart(ticketsRef.current, {
                 type: 'bar',
@@ -156,7 +177,10 @@ const TopPayoutReport = () => {
                 },
                 options: {
                     ...commonOptions,
-                    plugins: { ...commonOptions.plugins, title: { display: true, text: 'Tickets Payouts' } },
+                    plugins: {
+                        ...commonOptions.plugins,
+                        title: { display: true, text: 'Tickets Payouts' }
+                    },
                 },
             });
         }
@@ -401,6 +425,7 @@ const TopPayoutReport = () => {
                     {error}
                 </Alert>
             </Snackbar>
-        </Container>);
+        </Container>
+    );
 };
 export default TopPayoutReport;
