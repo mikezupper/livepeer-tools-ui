@@ -18,8 +18,8 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { generateColors } from "./chartUtils.js";
 import moment from 'moment';
 
-import {useLoaderData} from "react-router-dom";
-import {topPayoutReportLoader} from "../loaders/index.js";
+import { useLoaderData } from "react-router-dom";
+import { topPayoutReportLoader } from "../loaders/index.js";
 
 const TopPayoutReport = () => {
     const data = useLoaderData();
@@ -66,16 +66,39 @@ const TopPayoutReport = () => {
     useEffect(() => {
         if (!payoutData) return;
 
+        // Register ChartDataLabels plugin if needed
         Chart.register(ChartDataLabels);
+
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                datalabels: { display: false },
-                legend: { position: 'bottom' },
+                datalabels: { display: false }, // Disable datalabels globally
+                legend: { position: 'top' },
+                tooltip: {
+                    mode: 'index',       // Group items by index
+                    intersect: false,    // Trigger tooltip when hovering anywhere along the stack
+                    callbacks: {
+                        label: function(context) {
+                            // Use context.parsed.x for horizontal bars
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.x;
+                            return label + ': ' + parseFloat(value).toFixed(2);
+                        },
+                        footer: function(tooltipItems) {
+                            // Calculate total using parsed.x for horizontal bars
+                            let total = 0;
+                            tooltipItems.forEach((tooltipItem) => {
+                                total += tooltipItem.parsed.x || 0;
+                            });
+                            return 'Total: ' + total.toFixed(2);
+                        }
+                    },
+                    footerFont: { weight: 'bold' }
+                }
             },
             scales: { y: { stacked: true, position: "top" } },
-            indexAxis: 'y',
+            indexAxis: 'y', // Horizontal bars
         };
 
         // ETH Chart Setup with Stacked "Orch Share" and "Delegates Share"
@@ -346,7 +369,7 @@ const TopPayoutReport = () => {
                     <Box
                         sx={{
                             width: '100%',
-                            height: {xs: '400px', md: '600px'}, // Responsive height
+                            height: { xs: '400px', md: '600px' },
                             border: '1px solid #ccc',
                             borderRadius: '8px',
                             display: 'flex',
@@ -358,7 +381,7 @@ const TopPayoutReport = () => {
                         <canvas
                             id="eth"
                             ref={ethRef}
-                            style={{width: '100%', height: '100%'}}
+                            style={{ width: '100%', height: '100%' }}
                             aria-label="ETH Payouts Chart"
                             role="img"
                         ></canvas>
@@ -370,7 +393,7 @@ const TopPayoutReport = () => {
                     <Box
                         sx={{
                             width: '100%',
-                            height: {xs: '400px', md: '600px'}, // Responsive height
+                            height: { xs: '400px', md: '600px' },
                             border: '1px solid #ccc',
                             borderRadius: '8px',
                             display: 'flex',
@@ -382,7 +405,7 @@ const TopPayoutReport = () => {
                         <canvas
                             id="usd"
                             ref={usdRef}
-                            style={{width: '100%', height: '100%'}}
+                            style={{ width: '100%', height: '100%' }}
                             aria-label="USD Payouts Chart"
                             role="img"
                         ></canvas>
@@ -394,7 +417,7 @@ const TopPayoutReport = () => {
                     <Box
                         sx={{
                             width: '100%',
-                            height: {xs: '400px', md: '600px'}, // Responsive height
+                            height: { xs: '400px', md: '600px' },
                             border: '1px solid #ccc',
                             borderRadius: '8px',
                             display: 'flex',
@@ -406,7 +429,7 @@ const TopPayoutReport = () => {
                         <canvas
                             id="tickets"
                             ref={ticketsRef}
-                            style={{width: '100%', height: '100%'}}
+                            style={{ width: '100%', height: '100%' }}
                             aria-label="Tickets Payouts Chart"
                             role="img"
                         ></canvas>
@@ -419,13 +442,14 @@ const TopPayoutReport = () => {
                 open={openSnackbar}
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
-                anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
-                <Alert onClose={handleCloseSnackbar} severity="error" sx={{width: '100%'}}>
+                <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
                     {error}
                 </Alert>
             </Snackbar>
         </Container>
     );
 };
+
 export default TopPayoutReport;

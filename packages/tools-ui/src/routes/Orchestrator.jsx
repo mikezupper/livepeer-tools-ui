@@ -75,21 +75,22 @@ function Orchestrator() {
             type: 'bar',
             data: {
                 labels: [],
-                datasets: [{
-                    label: 'Orch Share',
-                    data: [],
-                    fill: false,
-                    backgroundColor,
-                    borderColor: backgroundColor.map(color => color.replace('0.6', '1')),
-                    borderWidth: 1,
-                    stack: 'Stack 0'
-                },
+                datasets: [
+                    {
+                        label: 'Orch Share',
+                        data: [],
+                        fill: false,
+                        backgroundColor,
+                        borderColor: backgroundColor.map(color => color.replace('0.6', '1')),
+                        borderWidth: 1,
+                        stack: 'Stack 0'
+                    },
                     {
                         label: 'Delegates Share',
                         data: [],
                         fill: false,
-                        backgroundColor: backgroundColor.map((color) => color.replace('0.6', '0.3')),
-                        borderColor: backgroundColor.map((color) => color.replace('0.6', '1')),
+                        backgroundColor: backgroundColor.map(color => color.replace('0.6', '0.3')),
+                        borderColor: backgroundColor.map(color => color.replace('0.6', '1')),
                         borderWidth: 1,
                         stack: 'Stack 0'
                     },
@@ -108,6 +109,25 @@ function Orchestrator() {
                     datalabels: {
                         display: false, // Disable data labels globally
                     },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                return label + ': ' + parseFloat(value).toFixed(2);
+                            },
+                            footer: function(tooltipItems) {
+                                let total = 0;
+                                tooltipItems.forEach((tooltipItem) => {
+                                    total += tooltipItem.parsed.y || 0;
+                                });
+                                return 'Total: ' + total.toFixed(2);
+                            }
+                        },
+                        footerFont: { weight: 'bold' }
+                    }
                 },
                 scales: {
                     x: {
@@ -121,12 +141,12 @@ function Orchestrator() {
         };
         // Initialize ETH Payouts Chart
         if (payoutsRef.current) {
-            payoutsChartRef.current = new Chart(payoutsRef.current,config);
+            payoutsChartRef.current = new Chart(payoutsRef.current, config);
         }
 
         // Initialize USD Payouts Chart
         if (payoutsUsdRef.current) {
-            payoutsUsdChartRef.current = new Chart(payoutsUsdRef.current,config);
+            payoutsUsdChartRef.current = new Chart(payoutsUsdRef.current, config);
         }
     };
 
