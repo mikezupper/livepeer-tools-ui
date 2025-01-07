@@ -32,11 +32,19 @@ export const proposalLoader=async () => {
     console.log(`[index] proposalLoader completed.`);
     return {proposals,proposalList:proposalEntries};
 }
-export const gatewayLoader=async () => {
+
+export const gatewaysLoader=async () => {
     console.log(`[index] gatewayLoader loading...`);
     const gateways = await DataService.fetchData(`${API_BASE_URL}/api/gateways`);
     console.log(`[index] leaderboardLoader completed.`);
     return {gateways};
+}
+export const gatewayLoader=async ({params}) => {
+    console.log(`[index] gatewayLoader loading...`,params);
+    const { eth_address } = params;
+    const gateway = await DataService.fetchData(`${API_BASE_URL}/api/gateway/${eth_address}`);
+    console.log(`[index] gatewayLoader completed.`);
+    return {gateway};
 }
 export const dailyPayoutReportLoader=async ({ params }) => {
     console.log(`[index] dailyPayoutReportLoader loading...`,params);

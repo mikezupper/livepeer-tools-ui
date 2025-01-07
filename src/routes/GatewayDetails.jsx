@@ -2,6 +2,7 @@ import React from 'react';
 import {Typography, Box, Card, CardHeader, Avatar, CardContent, Grid, Tooltip} from '@mui/material';
 import {styled} from "@mui/material/styles";
 import Button from "@mui/material/Button";
+import {useNavigate} from "react-router-dom";
 
 
 // Styled component for the Ethereum address tooltip
@@ -15,7 +16,7 @@ const AddressTooltip = styled(Tooltip)(({ theme }) => ({
 
 
 function GatewayDetails({gateway}) {
-
+    const navigate= useNavigate()
     return (
         <Grid item xs={12} sm={6} md={4} key={gateway.eth_address}>
             <Card
@@ -27,6 +28,7 @@ function GatewayDetails({gateway}) {
                         boxShadow: 6,
                     },
                 }}
+                onClick={()=>navigate(`/gateway/${gateway.eth_address}`)}
             >
                 <CardHeader
                     avatar={

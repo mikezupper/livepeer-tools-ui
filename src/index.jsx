@@ -17,12 +17,13 @@ import VotingHistoryList from "./routes/VotingHistoryList.jsx";
 import Stats from "./routes/Stats.jsx";
 import Leaderboard from "./routes/Leaderboard.jsx";
 import {
-    dailyPayoutReportLoader,
-    gatewayLoader, leaderboardLoader, monthlyPayoutReportLoader,
+    dailyPayoutReportLoader, gatewayLoader,
+    gatewaysLoader, leaderboardLoader, monthlyPayoutReportLoader,
     orchestratorLoader,
     orchestratorsLoader, proposalLoader, statsLoader, topPayoutReportLoader,
     weeklyPayoutReportLoader
 } from "./loaders/index.js";
+import Gateway from "./routes/Gateway.jsx";
 
 const currentDate = new Date().toISOString().split('T')[0];
 const router = createBrowserRouter(
@@ -51,6 +52,27 @@ const router = createBrowserRouter(
                 index
                 path="gateways"
                 element={<Gateways />}
+                loader={gatewaysLoader}
+                hydrateFallbackElement={<CircularProgress />}
+            />
+            <Route
+                index
+                path="broadcasters"
+                element={<Gateways />}
+                loader={gatewaysLoader}
+                hydrateFallbackElement={<CircularProgress />}
+            />
+            <Route
+                index
+                path="broadcaster/:eth_address"
+                element={<Gateway />}
+                loader={gatewayLoader}
+                hydrateFallbackElement={<CircularProgress />}
+            />
+            <Route
+                index
+                path="gateway/:eth_address"
+                element={<Gateway />}
                 loader={gatewayLoader}
                 hydrateFallbackElement={<CircularProgress />}
             />
