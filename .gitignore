@@ -128,3 +128,12 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+packages/tools-ui/public/ai-generator
+/.idea/.gitignore
+/.idea/livepeer-tools-ui.iml
+/.idea/modules.xml
+/.idea/vcs.xml
+
+**/dist
+**/node_modules

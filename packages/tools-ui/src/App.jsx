@@ -21,7 +21,7 @@ import { Link, Outlet } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
 import GroupsIcon from "@mui/icons-material/Groups";
-import { Assessment, NetworkCheck, Webhook } from "@mui/icons-material";
+import {Assessment, Memory, NetworkCheck, Webhook} from "@mui/icons-material";
 import HowToVoteIcon from "@mui/icons-material/HowToVote";
 
 const theme = createTheme({
@@ -78,6 +78,7 @@ function App() {
         { text: "Reports", icon: <Assessment />, path: "/reports" },
         { text: "Performance", icon: <NetworkCheck />, path: "/performance/leaderboard" },
         { text: "Treasury Voting", icon: <HowToVoteIcon />, path: "/vote/history" },
+        { text: "AI Generator", icon: <Memory />, path: "/ai-generator/index.html" },
     ];
 
     return (

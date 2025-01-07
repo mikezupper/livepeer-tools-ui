@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import {createBrowserRouter, RouterProvider, createRoutesFromElements, Route, Navigate} from 'react-router-dom';
 import App from './App';
 import Gateways from './routes/Gateways.jsx';
-import DataService from './api/DataService';
 import {Box, CircularProgress} from "@mui/material";
 import Orchestrators from "./routes/Orchestrators.jsx";
 import Reports from "./routes/Reports.jsx";
@@ -12,7 +11,6 @@ import PayoutSummaryReport from "./routes/PayoutSummaryReport.jsx";
 import Typography from "@mui/material/Typography";
 import TopPayoutReport from "./routes/TopPayoutReport.jsx";
 import Orchestrator from "./routes/Orchestrator.jsx";
-import {API_BASE_URL} from "./config.js";
 import VotingHistoryList from "./routes/VotingHistoryList.jsx";
 import Stats from "./routes/Stats.jsx";
 import Leaderboard from "./routes/Leaderboard.jsx";
@@ -24,7 +22,6 @@ import {
     weeklyPayoutReportLoader
 } from "./loaders/index.js";
 import Gateway from "./routes/Gateway.jsx";
-
 const currentDate = new Date().toISOString().split('T')[0];
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -148,7 +145,6 @@ const router = createBrowserRouter(
                 loader={statsLoader}
                 hydrateFallbackElement={<CircularProgress />}
             />
-
             {/* Catch-all route for undefined paths */}
             <Route
                 path="*"
