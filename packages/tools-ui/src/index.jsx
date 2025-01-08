@@ -22,6 +22,19 @@ import {
     weeklyPayoutReportLoader
 } from "./loaders/index.js";
 import Gateway from "./routes/Gateway.jsx";
+import AILayout from "./routes/ai/AILayout.jsx";
+import AIGenerator from "./routes/ai/AIGenerator.jsx";
+import TextToImage from "./routes/ai/TextToImage.jsx";
+import TextToSpeech from "./routes/ai/TextToSpeech.jsx";
+import ImageToImage from "./routes/ai/ImageToImage.jsx";
+import ImageToText from "./routes/ai/ImageToText.jsx";
+import UpscaleImage from "./routes/ai/UpscaleImage.jsx";
+import ImageToVideo from "./routes/ai/ImageToVideo.jsx";
+import AudioToText from "./routes/ai/AudioToText.jsx";
+import SegmentAnything2 from "./routes/ai/SegmentAnything2.jsx";
+import Llm from "./routes/ai/Llm.jsx";
+import NetworkCapabilities from "./routes/ai/NetworkCapabilities.jsx";
+import Settings from "./routes/ai/Settings.jsx";
 const currentDate = new Date().toISOString().split('T')[0];
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -145,6 +158,20 @@ const router = createBrowserRouter(
                 loader={statsLoader}
                 hydrateFallbackElement={<CircularProgress />}
             />
+            <Route path="ai" element={<AILayout />}>
+                <Route path="generator" element={<AIGenerator />} />
+                <Route path="text-to-image" element={<TextToImage />} />
+                <Route path="image-to-image" element={<ImageToImage />} />
+                <Route path="image-to-video" element={<ImageToVideo />} />
+                <Route path="image-to-text" element={<ImageToText />} />
+                <Route path="upscale" element={<UpscaleImage />} />
+                <Route path="llm" element={<Llm />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="network-capabilities" element={<NetworkCapabilities />} />
+                <Route path="segment-anything-2" element={<SegmentAnything2 />} />
+                <Route path="audio-to-text" element={<AudioToText />} />
+                <Route path="text-to-speech" element={<TextToSpeech />} />
+            </Route>
             {/* Catch-all route for undefined paths */}
             <Route
                 path="*"

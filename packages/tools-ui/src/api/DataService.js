@@ -11,6 +11,9 @@ import {
     pipelinesURL,
     regionsURL
 } from "../config.js";
+import {getGatewayUrl} from "../routes/ai/utils.js";
+import {from} from "rxjs";
+import {map} from "rxjs/operators";
 
 const ARBITRUM_RPC_URL = "https://arb1.arbitrum.io/rpc";
 if (!ARBITRUM_RPC_URL) {
@@ -92,8 +95,6 @@ async function updateLastVoteProcessedBlock(block) {
 }
 
 
-
-
 // Helper function to convert wei to eth
 const weiToEth = (wei) => {
     return Number(wei) / 1e18;
@@ -123,7 +124,7 @@ async function fetchAndStoreProposals() {
     for (const event of proposalCreatedEvents) {
         const { proposalId, proposer, description, voteStart, voteEnd } = event.args;
         if (proposalId === undefined) {
-            console.log(`ProposalCreated event with undefined proposalId`);
+            //console.log(`ProposalCreated event with undefined proposalId`);
             continue;
         }
         const propId = proposalId.toString();
@@ -150,14 +151,14 @@ async function fetchAndStoreProposals() {
                 createdAt: Date.now(), // or block.timestamp
             };
             await db.proposals.add(proposal);
-            console.log(`Stored new proposal ${propId} with status 'Created'`);
+            //console.log(`Stored new proposal ${propId} with status 'Created'`);
         } else {
             await db.proposals.update(propId, {
                 status: 'Created',
                 voteStart: voteStart?.toNumber ? voteStart.toNumber() : existing.voteStart,
                 voteEnd: voteEnd?.toNumber ? voteEnd.toNumber() : existing.voteEnd,
             });
-            console.log(`Updated existing proposal ${propId} to status 'Created'`);
+            //console.log(`Updated existing proposal ${propId} to status 'Created'`);
         }
 
         // **Option B**: Immediately refresh on-chain state for this proposal
@@ -176,12 +177,12 @@ async function fetchAndStoreProposals() {
 
         const existing = await db.proposals.get(propId);
         if (!existing) {
-            console.log(`ProposalCanceled event for ${propId} not found in DB. Skipping.`);
+            //console.log(`ProposalCanceled event for ${propId} not found in DB. Skipping.`);
             continue;
         }
 
         await db.proposals.update(propId, { status: 'Canceled' });
-        console.log(`Proposal ${propId} updated to status 'Canceled'`);
+        //console.log(`Proposal ${propId} updated to status 'Canceled'`);
 
         // **Option B**: Refresh from on-chain state (though we already know it’s Canceled)
         await refreshProposalState(propId);
@@ -200,13 +201,13 @@ async function fetchAndStoreProposals() {
         // Check if proposal exists
         const existing = await db.proposals.get(propId);
         if (!existing) {
-            console.log(`ProposalExecuted event for ${propId} not found in DB. Skipping.`);
+            //console.log(`ProposalExecuted event for ${propId} not found in DB. Skipping.`);
             continue;
         }
 
         // Update the status to 'Executed'
         await db.proposals.update(propId, { status: 'Executed' });
-        console.log(`Proposal ${propId} updated to status 'Executed'`);
+        //console.log(`Proposal ${propId} updated to status 'Executed'`);
 
         // Refresh from on-chain state (will confirm it’s "Executed")
         await refreshProposalState(propId);
@@ -229,12 +230,12 @@ async function fetchAndStoreProposals() {
     // Finally, update the last processed block in metadata
     //
     await updateLastProposalProcessedBlock(toBlock + 1);
-    console.log(`fetchAndStoreProposals complete. Processed up to block ${toBlock}.`);
+    //console.log(`fetchAndStoreProposals complete. Processed up to block ${toBlock}.`);
 }
 
 // 5. Query the CastVote events and store them in IndexedDB.
 async function fetchAndStoreVotes() {
-    console.log(`Fetching votes for proposals`);
+    //console.log(`Fetching votes for proposals`);
 
     const latestBlock = await provider.getBlockNumber();
     const fromBlock = await getLastVoteProcessedBlock();
@@ -252,16 +253,16 @@ async function fetchAndStoreVotes() {
     }
 
     if (castVoteEvents.length === 0) {
-        console.log("No new VoteCast events found.");
+        //console.log("No new VoteCast events found.");
         return;
     }
 
-    console.log(`Fetched ${castVoteEvents.length} VoteCast events.`);
+    //console.log(`Fetched ${castVoteEvents.length} VoteCast events.`);
 
     // // Extract unique block numbers from the events
     // const uniqueBlockNumbers = [...new Set(castVoteEvents.map(event => event.blockNumber))];
     //
-    // console.log(`Fetching ${uniqueBlockNumbers.length} unique blocks for timestamps.`);
+    // //console.log(`Fetching ${uniqueBlockNumbers.length} unique blocks for timestamps.`);
     //
     // // Fetch all unique blocks with rate limiting
     // let blocks;
@@ -281,7 +282,7 @@ async function fetchAndStoreVotes() {
     //     }
     // });
     //
-    // console.log("Fetched all necessary block timestamps.");
+    // //console.log("Fetched all necessary block timestamps.");
 
     // Prepare batch operations for IndexedDB
     const votesToAdd = [];
@@ -307,7 +308,7 @@ async function fetchAndStoreVotes() {
         // Optionally, verify that the proposal exists
         const proposalExists = await db.proposals.get(pid);
         if (!proposalExists) {
-            console.log(`Proposal ${pid} not found. Skipping vote.`);
+            //console.log(`Proposal ${pid} not found. Skipping vote.`);
             continue;
         }
 
@@ -356,19 +357,19 @@ async function fetchAndStoreVotes() {
             proposalsToUpdate[pid] += vote.stakeAmount;
         }
 
-        console.log(`Processed vote for proposal ${pid} by ${voter}`);
+        //console.log(`Processed vote for proposal ${pid} by ${voter}`);
     }
 
     // Bulk add votes to IndexedDB
     if (votesToAdd.length > 0) {
         try {
             await db.votes.bulkAdd(votesToAdd);
-            console.log(`Added ${votesToAdd.length} votes to IndexedDB.`);
+            //console.log(`Added ${votesToAdd.length} votes to IndexedDB.`);
         } catch (error) {
             console.error("Error adding votes to IndexedDB:", error);
         }
     } else {
-        console.log("No votes to add to IndexedDB.");
+        //console.log("No votes to add to IndexedDB.");
     }
 
     // Bulk update proposals' totalStake
@@ -377,7 +378,7 @@ async function fetchAndStoreVotes() {
     );
     try {
         await Promise.all(proposalUpdatePromises);
-        console.log("Updated totalStake for proposals.");
+        //console.log("Updated totalStake for proposals.");
     } catch (error) {
         console.error("Error updating proposals' totalStake:", error);
     }
@@ -385,16 +386,15 @@ async function fetchAndStoreVotes() {
     // Update the last processed block in metadata
     try {
         await updateLastVoteProcessedBlock(toBlock + 1);
-        console.log("Updated last processed vote block.");
+        //console.log("Updated last processed vote block.");
     } catch (error) {
         console.error("Error updating last processed vote block:", error);
     }
 }
 
-
 // 7. Fetch and store Orchestrator data
 async function fetchAndStoreOrchestrators() {
-    console.log(`Fetching orchestrator data from ${orchDetailsURL}`);
+    //console.log(`Fetching orchestrator data from ${orchDetailsURL}`);
 
     try {
         const response = await fetch(orchDetailsURL);
@@ -418,7 +418,7 @@ async function fetchAndStoreOrchestrators() {
             } = orch;
 
             if (!eth_address) {
-                console.log("Orchestrator with missing eth_address. Skipping.");
+                //console.log("Orchestrator with missing eth_address. Skipping.");
                 continue;
             }
 
@@ -435,22 +435,101 @@ async function fetchAndStoreOrchestrators() {
 
             // Upsert orchestrator data
             await db.orchestrators.put(orchestrator);
-            console.log(`Stored/Updated orchestrator ${orchestrator.eth_address}`);
+            //console.log(`Stored/Updated orchestrator ${orchestrator.eth_address}`);
         }
 
-        console.log("Orchestrator data fetch and store completed.");
+        //console.log("Orchestrator data fetch and store completed.");
     } catch (error) {
         console.error("Error fetching orchestrator data:", error);
     }
 }
+
+export async function fetchAndStoreCapabilities() {
+    try {
+        let gw = getGatewayUrl();
+        let url = `${gw}/getOrchestratorAICapabilities`;
+        let response = await fetch(url, {
+            method: "GET",
+            mode: "cors",
+        });
+
+        if (!response.ok) {
+            throw new Error('[GatewayDataFetcher] fetching Orchestrator AI Capabilities response was not ok');
+        }
+        let data = await response.json();
+
+        const pipelines = {};
+
+        for (let orchestrator of data.orchestrators) {
+            const ethAddress = orchestrator.address;
+
+            // Get the orchestrator's name from the database if available
+            const storedOrchestrator = await db.orchestrators.get(ethAddress);
+            const storedOrchestratorName = storedOrchestrator?.name || ethAddress
+
+            for (let pipeline of orchestrator.pipelines) {
+                const pipelineType = pipeline.type;
+
+                if (!pipelines[pipelineType]) {
+                    pipelines[pipelineType] = {
+                        name: pipelineType,
+                        models: []
+                    };
+                }
+
+                for (let model of pipeline.models) {
+                    const modelName = model.name;
+                    const modelStatus = model.status;
+
+                    let pipelineModels = pipelines[pipelineType].models;
+
+                    let modelEntry = pipelineModels.find(m => m.name === modelName);
+
+                    if (!modelEntry) {
+                        modelEntry = {
+                            name: modelName,
+                            Cold: 0,
+                            Warm: 0,
+                            orchestrators: []
+                        };
+                        pipelineModels.push(modelEntry);
+                    }
+
+                    modelEntry.Cold += modelStatus.Cold;
+                    modelEntry.Warm += modelStatus.Warm;
+
+                    modelEntry.orchestrators.push({
+                        ethAddress: storedOrchestratorName,
+                        warm: modelStatus.Warm
+                    });
+                }
+            }
+        }
+
+        // Now, clear the capabilities database and store the new data
+        await db.capabilities.clear();
+
+        for (let pipelineName in pipelines) {
+            await db.capabilities.add({
+                name: pipelineName,
+                models: pipelines[pipelineName].models
+            });
+        }
+
+    } catch (error) {
+        console.error('[GatewayDataFetcher] Error fetching or storing capabilities:', error);
+    }
+}
+
 // Periodic update function to fetch new proposals and votes
 async function periodicUpdate() {
     try {
-        console.log("Starting periodic update...");
+        //console.log("Starting periodic update...");
         await fetchAndStoreOrchestrators();
         await fetchAndStoreProposals();
         await fetchAndStoreVotes();
-        console.log("Periodic update completed.");
+        await fetchAndStoreCapabilities();
+        //console.log("Periodic update completed.");
     } catch (error) {
         console.error("Error during periodic update:", error);
     }
@@ -487,7 +566,7 @@ export default class DataServices {
     // Get all proposals
     static async getProposals() {
         const proposals = await db.proposals.toArray();
-        console.log(`Retrieved ${proposals.length} proposals from IndexedDB`);
+        //console.log(`Retrieved ${proposals.length} proposals from IndexedDB`);
 
         // For each proposal, get associated votes
         for (const proposal of proposals) {
@@ -561,7 +640,7 @@ export default class DataServices {
             throw new Error('Failed to fetch pipelines');
         }
         const data = await response.json();
-        // console.log("DataService - fetchPipelines data", data);
+        // //console.log("DataService - fetchPipelines data", data);
         return data.pipelines || [];
     }
 
@@ -576,7 +655,7 @@ export default class DataServices {
      * @throws {Error} If the request fails.
      */
     static async fetchLeaderboardData({pipeline, model, region, isAIType}) {
-        // console.log("DataService fetchLeaderboardData",pipeline,model,region,isAIType);
+        // //console.log("DataService fetchLeaderboardData",pipeline,model,region,isAIType);
         const endpoint = isAIType ? aiLeaderboardStatsURL : leaderboardStatsURL;
         let url = `${endpoint}?`;
 
@@ -586,7 +665,7 @@ export default class DataServices {
         if (isAIType) {
             url += `pipeline=${pipeline}&model=${model}`;
         }
-        // console.log("DataService fetchLeaderboardData url" ,url);
+        // //console.log("DataService fetchLeaderboardData url" ,url);
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -631,7 +710,7 @@ export default class DataServices {
      * @throws {Error} If the request fails.
      */
     static async fetchStatsData({orchestrator, pipeline, model, isAIType}) {
-        // console.log("DataService - fetchStatsData data", orchestrator, pipeline, model, isAIType);
+        // //console.log("DataService - fetchStatsData data", orchestrator, pipeline, model, isAIType);
         const endpoint = isAIType ? aiPerfStatsURL : perfStatsURL;
         let url = `${endpoint}?orchestrator=${orchestrator}`;
 
@@ -646,8 +725,31 @@ export default class DataServices {
     }
 }
 
+export const $supportedModels = (pipelineNameFilter) =>
+        from(db.capabilities.toArray()).pipe(
+            map((capabilities) =>
+                capabilities
+                    .filter((cap) =>cap.name.toLowerCase().includes(pipelineNameFilter.toLowerCase()))
+                    .flatMap((capability) => capability.models)
+                    .map((model) => model.name)
+            )
+        );
 
-
+export const $networkCapabilities = () =>
+    from(db.capabilities.toArray()).pipe(
+        map((capabilities) =>
+            capabilities.map((capability) => ({
+                name: capability.name,
+                models: capability.models.map((model) => ({
+                    ...model,
+                    orchestrators: model.orchestrators.map((orch) => ({
+                        ethAddress: orch.ethAddress,
+                        warm: orch.warm,
+                    })),
+                })),
+            }))
+        )
+    );
 /**
  * Retrieves a metadata value by key.
  * @param {string} key
@@ -673,7 +775,7 @@ async function setMetadata(key, value) {
  * Maps the numeric state enum to a string.
  */
 function mapStateValueToStatus(stateValue) {
-    console.log("mapStateValueToStatus",stateValue);
+    //console.log("mapStateValueToStatus",stateValue);
     switch (stateValue) {
         case 0n:
             return 'Pending';
@@ -704,10 +806,10 @@ async function refreshProposalState(proposalId) {
     try {
         const stateValue = await governorContract.state(proposalId);
         const newStatus = mapStateValueToStatus(stateValue);
-        // console.log("refreshProposalState",proposalId,stateValue,newStatus);
+        // //console.log("refreshProposalState",proposalId,stateValue,newStatus);
 
         await db.proposals.update(proposalId.toString(), { status: newStatus });
-        console.log(`Proposal ${proposalId} updated to status: ${newStatus}`);
+        //console.log(`Proposal ${proposalId} updated to status: ${newStatus}`);
     } catch (error) {
         console.error(`Error refreshing proposal state for ID ${proposalId}:`, error);
     }
