@@ -78,7 +78,7 @@ function App() {
         { text: "Reports", icon: <Assessment />, path: "/reports" },
         { text: "Performance", icon: <NetworkCheck />, path: "/performance/leaderboard" },
         { text: "Treasury Voting", icon: <HowToVoteIcon />, path: "/vote/history" },
-        // { text: "AI Generator", icon: <Memory />, path: "/ai-generator/" },
+        { text: "AI Generator", icon: <Memory />, path: "/ai/generator" },
     ];
 
     return (
@@ -129,7 +129,7 @@ function App() {
                     >
                         <List>
                             {menuItems.map((item, index) => (
-                                <ListItem key={index} component={Link} to={item.path} button>
+                                <ListItem key={index} component={Link} to={item.path}>
                                     <ListItemIcon>{item.icon}</ListItemIcon>
                                     <ListItemText primary={item.text} />
                                 </ListItem>
