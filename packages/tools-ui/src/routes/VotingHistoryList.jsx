@@ -39,7 +39,6 @@ const VotingHistoryList = () => {
         : null;
 
     // Store an object for the selected voter
-    // e.g. { address: '0x...', name: 'Alice', avatar: 'someUrl' } or null
     const [selectedVoter, setSelectedVoter] = useState(null);
 
     const theme = useTheme();
@@ -335,15 +334,13 @@ const VotingHistoryList = () => {
                                         >
                                             <TableCell sx={{ fontWeight: 'bold' }}>Voter</TableCell>
                                             <TableCell sx={{ fontWeight: 'bold' }}>Support</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>
-                                                Stake (ETH)
-                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold' }}>Stake (ETH)</TableCell>
                                             <TableCell sx={{ fontWeight: 'bold' }}>% of Vote</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold' }}>Reason</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {selectedProposalData.votes &&
-                                        selectedProposalData.votes.length > 0 ? (
+                                        {selectedProposalData.votes && selectedProposalData.votes.length > 0 ? (
                                             selectedProposalData.votes.map((vote, idx) => {
                                                 let bgColor = 'inherit';
                                                 switch (vote.support) {
@@ -372,10 +369,9 @@ const VotingHistoryList = () => {
                                                         key={idx}
                                                         sx={{
                                                             backgroundColor: bgColor,
-                                                            cursor: 'pointer', // indicate clickable row
+                                                            cursor: 'pointer',
                                                         }}
                                                         onClick={() => {
-                                                            // Store an object for the selected voter
                                                             setSelectedVoter({
                                                                 address: vote.voterAddress,
                                                                 name: vote.voterName,
@@ -421,12 +417,13 @@ const VotingHistoryList = () => {
                                                             )}
                                                             %
                                                         </TableCell>
+                                                        <TableCell>{vote.reason ? vote.reason : '-'}</TableCell>
                                                     </TableRow>
                                                 );
                                             })
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={4} align="center">
+                                                <TableCell colSpan={5} align="center">
                                                     No votes found for this proposal.
                                                 </TableCell>
                                             </TableRow>
@@ -435,7 +432,7 @@ const VotingHistoryList = () => {
                                 </Table>
                             </TableContainer>
 
-                            {/* The modal (or Dialog) for all votes by the selected voter */}
+                            {/* The modal for all votes by the selected voter */}
                             <Dialog
                                 open={Boolean(selectedVoter)}
                                 onClose={() => setSelectedVoter(null)}
