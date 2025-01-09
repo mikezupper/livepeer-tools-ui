@@ -5,7 +5,7 @@ import {DataGrid} from "@mui/x-data-grid";
 
 import {renderDecimalCell, renderTimestampCell} from "../utils";
 import DataService from '../api/DataService';
-
+import "../styles/App.css"
 /**
  * Stats component for displaying raw stats based on orchestrator, pipeline, and model selections.
  * @returns {JSX.Element} The rendered Stats component.

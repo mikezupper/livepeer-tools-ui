@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect } from "react";
 import {
     AppBar,
@@ -21,7 +22,7 @@ import { Link, Outlet } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
 import GroupsIcon from "@mui/icons-material/Groups";
-import {Assessment, Memory, NetworkCheck, Webhook} from "@mui/icons-material";
+import { Assessment, Memory, NetworkCheck, Webhook } from "@mui/icons-material";
 import HowToVoteIcon from "@mui/icons-material/HowToVote";
 
 const theme = createTheme({
@@ -53,22 +54,17 @@ const theme = createTheme({
 
 function App() {
     const muiTheme = useTheme();
-    // Detect if we are on mobile (sm or below)
     const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
     // Keep drawer open by default on non-mobile, closed on mobile
     const [drawerOpen, setDrawerOpen] = useState(!isMobile);
 
-    // Whenever viewport changes between mobile and desktop, reset drawer state
     useEffect(() => {
         setDrawerOpen(!isMobile);
     }, [isMobile]);
 
     const toggleDrawer = () => {
-        // Only allow toggling on mobile; for desktop, keep it open
-        if (isMobile) {
-            setDrawerOpen(!drawerOpen);
-        }
+        setDrawerOpen(!drawerOpen);
     };
 
     const menuItems = [
@@ -86,20 +82,27 @@ function App() {
             <CssBaseline />
             <Box sx={{ display: "flex" }}>
                 {/* AppBar */}
-                <AppBar>
+                <AppBar
+                    position="fixed"
+                    sx={{
+                        ml: !isMobile && drawerOpen ? "250px" : 0,
+                        width: !isMobile && drawerOpen ? `calc(100% - 250px)` : "100%",
+                        transition: muiTheme.transitions.create(["margin", "width"], {
+                            easing: muiTheme.transitions.easing.sharp,
+                            duration: muiTheme.transitions.duration.leavingScreen,
+                        }),
+                    }}
+                >
                     <Toolbar>
-                        {/* Only show menu toggle icon on mobile */}
-                        {isMobile && (
-                            <IconButton
-                                edge="start"
-                                color="inherit"
-                                aria-label="menu"
-                                onClick={toggleDrawer}
-                            >
-                                <MenuIcon />
-                            </IconButton>
-                        )}
-
+                        <IconButton
+                            edge="start"
+                            color="inherit"
+                            aria-label="menu"
+                            onClick={toggleDrawer}
+                            sx={{ mr: 2 }}
+                        >
+                            <MenuIcon />
+                        </IconButton>
                         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                             Livepeer Tools by Livepeer.Cloud SPE
                         </Typography>
@@ -108,22 +111,18 @@ function App() {
 
                 {/* Drawer */}
                 <Drawer
-                    variant={isMobile ? "temporary" : "permanent"}
+                    variant={isMobile ? "temporary" : "persistent"}
                     open={drawerOpen}
                     onClose={toggleDrawer}
                     sx={{
                         "& .MuiDrawer-paper": {
                             width: 250,
                             boxSizing: "border-box",
-                            // You could also add a top offset if you want the drawer below the AppBar:
-                            marginTop: isMobile ? 0 : '64px',
                         },
                     }}
                 >
                     <Box
                         role="presentation"
-                        // On mobile, clicking inside the drawer might close it if you want
-                        // but typically you'd keep the toggle on a ListItem if you do.
                         onClick={isMobile ? toggleDrawer : undefined}
                         onKeyDown={isMobile ? toggleDrawer : undefined}
                     >
@@ -139,7 +138,19 @@ function App() {
                 </Drawer>
 
                 {/* Main Content */}
-                <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                <Box
+                    component="main"
+                    sx={{
+                        flexGrow: 1,
+                        p: 3,
+                        mt: 8, // margin-top to account for AppBar height
+                        transition: muiTheme.transitions.create("margin", {
+                            easing: muiTheme.transitions.easing.sharp,
+                            duration: muiTheme.transitions.duration.leavingScreen,
+                        }),
+                        ml: !isMobile && drawerOpen ? "250px" : 0,
+                    }}
+                >
                     <Container sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3, md: 4 } }}>
                         <Outlet />
                     </Container>
