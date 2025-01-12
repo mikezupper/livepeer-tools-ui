@@ -72,29 +72,35 @@ const TextToImage = () => {
         }
 
         try {
-            const response = await fetch(`${getGatewayUrl()}/text-to-image`, {
-                method: "POST",
-                mode: "cors",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${getBearerToken()}`,
-                },
-                body: JSON.stringify(formState),
-            });
+          const { width, height, ...rest } = formState;
+  
+          const response = await fetch(`${getGatewayUrl()}/text-to-image`, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getBearerToken()}`,
+            },
+            body: JSON.stringify({
+              ...rest,
+              width: parseInt(width, 10),
+              height: parseInt(height, 10),
+            }),
+          });
 
-            const data = await response.json();
+          const data = await response.json();
 
-            if (data.error) {
-                setErrorMessage("Failed generating an image, please try again.");
-            } else {
-                setOutputImages(data.images || []);
-                setSuccessMessage("Images generated successfully!");
-            }
+          if (data.error) {
+            setErrorMessage("Failed generating an image, please try again.");
+          } else {
+            setOutputImages(data.images || []);
+            setSuccessMessage("Images generated successfully!");
+          }
         } catch (error) {
-            console.error("[TextToImage] handleSubmit error:", error);
-            setErrorMessage("Failed to generate image, please try again.");
+          console.error("[TextToImage] handleSubmit error:", error);
+          setErrorMessage("Failed to generate image, please try again.");
         } finally {
-            setLoading(false);
+          setLoading(false);
         }
     };
 
