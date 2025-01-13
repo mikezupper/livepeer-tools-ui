@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { useObservable } from "rxjs-hooks";
 import { $supportedModels } from "../../api/DataService.js";
-import { getBearerToken, getGatewayUrl, num_between } from "./utils.js";
+import {floatFields, getBearerToken, getGatewayUrl, intFields, num_between} from "./utils.js";
 import GeneratedImageCard from "./GenerateImageCard.jsx";
 
 const TextToImage = () => {
@@ -44,7 +44,14 @@ const TextToImage = () => {
 
     const handleChange = (event) => {
         const { name, value } = event.target;
-        setFormState((prevState) => ({ ...prevState, [name]: value }));
+        setFormState((prevState) => ({
+            ...prevState,
+            [name]: intFields.includes(name)
+                ? (value && parseInt(value, 10))
+                : floatFields.includes(name)
+                    ? (value && parseFloat(value))
+                    : value,
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -70,6 +77,8 @@ const TextToImage = () => {
             setLoading(false);
             return;
         }
+        if(formState.seed === "")
+            delete formState.seed;
 
         try {
             const response = await fetch(`${getGatewayUrl()}/text-to-image`, {

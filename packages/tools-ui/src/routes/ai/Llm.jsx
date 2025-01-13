@@ -17,7 +17,7 @@ import {
 import { useObservable } from "rxjs-hooks";
 import { $supportedModels } from "../../api/DataService.js";
 import { marked } from "marked";
-import {getGatewayUrl,getBearerToken} from "./utils.js";
+import {getGatewayUrl, getBearerToken, intFields, floatFields} from "./utils.js";
 
 const Llm = () => {
     const [formState, setFormState] = useState({
@@ -36,7 +36,11 @@ const Llm = () => {
         const { name, value } = event.target;
         setFormState((prevState) => ({
             ...prevState,
-            [name]: value,
+            [name]: intFields.includes(name)
+                ? (value && parseInt(value, 10))
+                : floatFields.includes(name)
+                    ? (value && parseFloat(value))
+                    : value,
         }));
     };
 

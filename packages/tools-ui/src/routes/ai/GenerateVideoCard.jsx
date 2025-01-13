@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import {useObservable} from "rxjs-hooks";
 import {$supportedModels} from "../../api/DataService.js";
+import {floatFields, intFields} from "./utils.js";
 
 const GenerateVideoCard = () => {
     const models = useObservable(() => $supportedModels("Image to Video"), []);
@@ -35,7 +36,11 @@ const GenerateVideoCard = () => {
         const { name, value } = event.target;
         setFormState((prevState) => ({
             ...prevState,
-            [name]: value,
+            [name]: intFields.includes(name)
+                ? (value && parseInt(value, 10))
+                : floatFields.includes(name)
+                    ? (value && parseFloat(value))
+                    : value,
         }));
     };
 

@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import { useObservable } from "rxjs-hooks";
 import { $supportedModels } from "../../api/DataService.js";
-import { getGatewayUrl, getBearerToken } from "./utils.js";
+import {getGatewayUrl, getBearerToken, intFields, floatFields} from "./utils.js";
 import GeneratedImageCard from "./GenerateImageCard.jsx";
 
 const UpscaleImage = () => {
@@ -49,7 +49,11 @@ const UpscaleImage = () => {
         const { name, value } = event.target;
         setFormState((prevState) => ({
             ...prevState,
-            [name]: value,
+            [name]: intFields.includes(name)
+                ? (value && parseInt(value, 10))
+                : floatFields.includes(name)
+                    ? (value && parseFloat(value))
+                    : value,
         }));
     };
 
@@ -75,6 +79,8 @@ const UpscaleImage = () => {
             setLoading(false);
             return;
         }
+        if(formState.seed === "")
+            delete formState.seed;
 
         const formData = new FormData();
         formData.append("prompt", "not needed");

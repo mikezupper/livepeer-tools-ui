@@ -45,3 +45,8 @@ export const setDefaultNavLink = (navLink) => {
 export const num_between = (x, min, max) => {
     return x >= min && x <= max;
 };
+
+// Specify the fields that need to be integers or numbers
+export const intFields = ["width", "height", "guidance_scale", "num_inference_steps", "num_images_per_prompt","seed","motion_bucket_id","fps","strength","max_tokens"];
+export const floatFields = ["noise_aug_strength"];
+

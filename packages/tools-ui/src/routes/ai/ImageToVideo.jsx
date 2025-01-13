@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { useObservable } from "rxjs-hooks";
 import { $supportedModels } from "../../api/DataService.js";
-import { getBearerToken, getGatewayUrl } from "./utils.js";
+import {floatFields, getBearerToken, getGatewayUrl, intFields} from "./utils.js";
 
 const ImageToVideo = () => {
     const [formState, setFormState] = useState({
@@ -42,7 +42,11 @@ const ImageToVideo = () => {
         const { name, value } = event.target;
         setFormState((prevState) => ({
             ...prevState,
-            [name]: value,
+            [name]: intFields.includes(name)
+                ? (value && parseInt(value, 10))
+                : floatFields.includes(name)
+                    ? (value && parseFloat(value))
+                    : value,
         }));
     };
 

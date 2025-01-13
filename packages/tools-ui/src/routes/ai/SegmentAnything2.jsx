@@ -19,7 +19,7 @@ import { useObservable } from "rxjs-hooks";
 import { $supportedModels } from "../../api/DataService.js";
 import { Stage, Layer, Image as KonvaImage, Rect, Circle } from "react-konva";
 import useImage from "use-image";
-import { getBearerToken, getGatewayUrl } from "./utils.js";
+import {floatFields, getBearerToken, getGatewayUrl, intFields} from "./utils.js";
 
 const MaskedImageCanvas = ({ maskData, imageFile }) => {
     const canvasRef = useRef(null);
@@ -221,6 +221,11 @@ const SegmentAnything2 = () => {
             point_labels:
                 type === "checkbox" && name === "usePoint" ? "" : prev.point_labels,
             box: type === "checkbox" && name === "usePoint" ? "" : prev.box,
+            [name]: intFields.includes(name)
+                ? (value && parseInt(value, 10))
+                : floatFields.includes(name)
+                    ? (value && parseFloat(value))
+                    : value,
         }));
 
         setRectProps(null);
@@ -268,7 +273,10 @@ const SegmentAnything2 = () => {
         body.append("return_logits", return_logits);
         body.append("normalize_coords", normalize_coords);
         body.append("safety_check", safety_check);
-        if (formState.seed !== "") {
+        if(formState.seed === "")
+            delete formState.seed;
+
+        if (formState.seed && formState.seed !== "") {
             body.append("seed", formState.seed);
         }
 
