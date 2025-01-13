@@ -30,7 +30,15 @@ const ImageToText = () => {
     const [generatedText, setGeneratedText] = useState("");
 
     const models = useObservable(() => $supportedModels("Image to Text"), []);
-
+    // Update the model_id once models are loaded
+    React.useEffect(() => {
+        if (models.length > 0 && !formState.model_id) {
+            setFormState((prevState) => ({
+                ...prevState,
+                model_id: models[0],
+            }));
+        }
+    }, [models]);
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
         setGeneratedText(""); // Reset generated text when a new file is uploaded

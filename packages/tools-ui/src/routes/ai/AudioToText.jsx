@@ -110,7 +110,12 @@ const AudioToText = () => {
 
     const pipelineNameFilter = "Audio to text";
     const models = useObservable(() => $supportedModels(pipelineNameFilter), []);
-
+    // Update the model_id once models are loaded
+    React.useEffect(() => {
+        if (models.length > 0 && !selectedModel) {
+            setSelectedModel(models[0]);
+        }
+    }, [models]);
     return (
         <section>
             <Typography variant="h4" fontWeight="bold" gutterBottom>

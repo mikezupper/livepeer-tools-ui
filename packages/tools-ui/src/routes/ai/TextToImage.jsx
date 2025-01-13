@@ -35,6 +35,16 @@ const TextToImage = () => {
         seed: undefined,
     };
 
+    // Update the model_id once models are loaded
+    React.useEffect(() => {
+        if (models.length > 0 && !formState.model_id) {
+            setFormState((prevState) => ({
+                ...prevState,
+                model_id: models[0],
+            }));
+        }
+    }, [models]);
+
     const [formState, setFormState] = useState(init_state);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");

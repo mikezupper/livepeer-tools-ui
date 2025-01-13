@@ -40,6 +40,15 @@ const ImageToImage = () => {
 
     const models = useObservable(() => $supportedModels("Image to Image"), []);
     const videoModels = useObservable(() => $supportedModels("Image to Video"), []);
+    // Update the model_id once models are loaded
+    React.useEffect(() => {
+        if (models.length > 0 && !formState.model_id) {
+            setFormState((prevState) => ({
+                ...prevState,
+                model_id: models[0],
+            }));
+        }
+    }, [models]);
 
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);

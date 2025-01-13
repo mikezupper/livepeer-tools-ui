@@ -103,7 +103,15 @@ const SegmentAnything2 = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const models = useObservable(() =>$supportedModels("Segment Anything 2"),[]);
-
+// Update the model_id once models are loaded
+    React.useEffect(() => {
+        if (models.length > 0 && !formState.model_id) {
+            setFormState((prevState) => ({
+                ...prevState,
+                model_id: models[0],
+            }));
+        }
+    }, [models]);
     const [imageURL, setImageURL] = useState(null);
     const [image] = useImage(imageURL);
     const [rectProps, setRectProps] = useState(null);

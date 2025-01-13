@@ -31,7 +31,15 @@ const Llm = () => {
     const [loading, setLoading] = useState(false);
     const [output, setOutput] = useState("");
     const models = useObservable(() => $supportedModels("Llm"), []);
-
+// Update the model_id once models are loaded
+    React.useEffect(() => {
+        if (models.length > 0 && !formState.model_id) {
+            setFormState((prevState) => ({
+                ...prevState,
+                model_id: models[0],
+            }));
+        }
+    }, [models]);
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormState((prevState) => ({

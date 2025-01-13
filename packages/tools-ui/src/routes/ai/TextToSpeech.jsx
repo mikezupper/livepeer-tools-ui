@@ -28,7 +28,15 @@ const TextToSpeech = () => {
     const [loading, setLoading] = useState(false);
     const [output, setOutput] = useState("");
     const models = useObservable(() => $supportedModels("Text to speech"), []);
-
+// Update the model_id once models are loaded
+    React.useEffect(() => {
+        if (models.length > 0 && !formState.model_id) {
+            setFormState((prevState) => ({
+                ...prevState,
+                model_id: models[0],
+            }));
+        }
+    }, [models]);
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormState((prevState) => ({
