@@ -51,10 +51,10 @@ const TextToSpeech = () => {
         setLoading(true);
         setSuccessMessage("");
         setErrorMessage("");
-
+        setOutput("")
 
         let errors = [];
-        const {text, description, model_id} = formState;
+        const {text, model_id} = formState;
         if (!text.trim()) errors.push("Please enter a text.");
         if (!model_id.trim()) errors.push("Please enter a model.");
 
@@ -65,16 +65,11 @@ const TextToSpeech = () => {
         }
 
         try {
-            let body = {
-                text, description, model_id
-            };
-
-
             let response = await fetch(`${getGatewayUrl()}/text-to-speech`, {
                 method: "POST",
                 mode: "cors",
                 cache: "no-cache",
-                body: JSON.stringify(body),
+                body: JSON.stringify(formState),
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${getBearerToken()}`
@@ -95,12 +90,12 @@ const TextToSpeech = () => {
         } catch (error) {
             console.error("[TextToSpeech] handleSubmit error:", error);
             setErrorMessage("Failed to generate text, please try again.");
+            setOutput("")
         } finally {
             setLoading(false);
         }
 
     };
-
     return (
         <Box sx={{py: 3}}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
