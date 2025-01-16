@@ -1,8 +1,3 @@
-import {useObservable} from "rxjs-hooks";
-import {from} from "rxjs";
-import db from "../../db.js";
-import {map} from "rxjs/operators";
-
 const bearerToken = import.meta.env.VITE_GATEWAY_BEARER_TOKEN;
 export const defaultGatewayUrl = import.meta.env.VITE_GATEWAY_URL;
 const defaultNavLink = import.meta.env.VITE_NAVIGATION_LINK;
@@ -14,6 +9,8 @@ export const getBearerToken = ()=>{
 export const getGatewayUrl = () => {
     let value = localStorage.getItem("gatewayUrl")
     if(!value){
+       // console.log(`[getGatewayUrl] NO value [${value}] ...  setting default to : ${defaultGatewayUrl} `)
+
         setGatewayUrl(defaultGatewayUrl)
         value = defaultGatewayUrl;
     }

@@ -25,13 +25,14 @@ const Llm = () => {
         prompt: "",
         model_id: "",
         max_tokens: 256,
+        stream: true,
     });
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [output, setOutput] = useState("");
     const models = useObservable(() => $supportedModels("Llm"), []);
-// Update the model_id once models are loaded
+    // Update the model_id once models are loaded
     React.useEffect(() => {
         if (models.length > 0 && !formState.model_id) {
             setFormState((prevState) => ({
@@ -72,7 +73,7 @@ const Llm = () => {
                 },
             ],
             max_tokens: parseInt(formState.max_tokens, 10),
-            stream: true,
+            stream: formState.stream === "true",
         };
 
         try {
@@ -80,64 +81,79 @@ const Llm = () => {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${getBearerToken()}`,
-                    Accept: "text/event-stream",
+                    Accept: formState.stream === "true" ? "text/event-stream" : "application/json",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(payload),
             });
 
-            if (!response.body) {
-                throw new Error("ReadableStream not supported in this browser.");
-            }
+            if (formState.stream === "true") {
+                if (!response.body) {
+                    throw new Error("ReadableStream not supported in this browser.");
+                }
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = "";
-            let accumulatedContent = "";
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let accumulatedContent = "";
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
 
-                buffer += decoder.decode(value, { stream: true });
-                let lines = buffer.split("\n");
-                buffer = lines.pop(); // Keep incomplete line for next read
+                    buffer += decoder.decode(value, { stream: true });
+                    let lines = buffer.split("\n");
+                    buffer = lines.pop();
 
-                for (let line of lines) {
-                    line = line.trim();
-                    if (line.startsWith("data:")) {
+                    for (let line of lines) {
+                        line = line.trim();
+                        if (!line.startsWith("data:")) continue;
                         const dataStr = line.slice(5).trim();
                         if (dataStr === "[DONE]") continue;
 
                         try {
                             const parsed = JSON.parse(dataStr);
-                            if (parsed.chunk) {
-                                const chunkData = JSON.parse(parsed.chunk);
-                                const choices = chunkData?.choices;
-                                if (
-                                    choices &&
-                                    choices[0] &&
-                                    choices[0].delta &&
-                                    choices[0].delta.content
-                                ) {
-                                    let content = choices[0].delta.content.replace(
-                                        /<\|start_header_id\|>assistant<\|end_header_id\|>/g,
-                                        ""
-                                    );
-                                    accumulatedContent += content;
-                                }
+                            const choices = parsed?.choices;
+                            if (choices && choices[0]?.delta?.content) {
+                                let content = choices[0].delta.content.replace(
+                                    /<\|start_header_id\|>assistant<\|end_header_id\|>/g,
+                                    ""
+                                );
+                                accumulatedContent += content;
                             }
                         } catch (e) {
                             console.error("Error parsing SSE data", e);
                         }
                     }
+
+                    const cleanedOutput = accumulatedContent.replace(
+                        /<\|start_header_id\|>assistant<\|end_header_id\|>/g,
+                        ""
+                    );
+                    setOutput(marked(cleanedOutput));
+                }
+            } else {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch the response.");
                 }
 
-                const cleanedOutput = accumulatedContent.replace(
-                    /<\|start_header_id\|>assistant<\|end_header_id\|>/g,
-                    ""
-                );
-                setOutput(marked(cleanedOutput));
+                const responseData = await response.json();
+                const choices = responseData?.choices;
+
+                if (choices && choices[0]) {
+                    let content = choices[0].message?.content || choices[0]?.delta?.content;
+
+                    if (!content) {
+                        throw new Error("Invalid response format.");
+                    }
+                    const cleanedOutput = content.replace(
+                        /<\|start_header_id\|>assistant<\|end_header_id\|>/g,
+                        ""
+                    );
+                    setOutput(marked(cleanedOutput));
+                } else {
+                    throw new Error("Invalid response format.");
+                }
             }
 
             setLoading(false);
@@ -224,6 +240,7 @@ const Llm = () => {
                                     />
                                 )}
                             </Box>
+
                             <FormControl fullWidth sx={{ mb: 3 }}>
                                 <InputLabel>Model</InputLabel>
                                 <Select
@@ -255,7 +272,22 @@ const Llm = () => {
                                 required
                                 sx={{ mb: 3 }}
                             />
-
+                            <FormControl fullWidth sx={{ mb: 3 }}>
+                                <InputLabel>Stream</InputLabel>
+                                <Select
+                                    name="stream"
+                                    value={formState.stream}
+                                    onChange={handleChange}
+                                    required
+                                >
+                                    <MenuItem value={"true"}>
+                                        true
+                                    </MenuItem>
+                                    <MenuItem value={"false"}>
+                                        false
+                                    </MenuItem>
+                                </Select>
+                            </FormControl>
                         </form>
                     </CardContent>
                 </Card>
