@@ -43,13 +43,16 @@ const Llm = () => {
     }, [models]);
     const handleChange = (event) => {
         const { name, value } = event.target;
+     //   console.log("handleChange ",formState.stream === "true",name, value,formState)
         setFormState((prevState) => ({
             ...prevState,
-            [name]: intFields.includes(name)
-                ? (value && parseInt(value, 10))
-                : floatFields.includes(name)
-                    ? (value && parseFloat(value))
-                    : value,
+            [name]: name === "stream"
+                ? value === "true"
+                : intFields.includes(name)
+                    ? (value && parseInt(value, 10))
+                    : floatFields.includes(name)
+                        ? (value && parseFloat(value))
+                        : value,
         }));
     };
 
@@ -59,7 +62,7 @@ const Llm = () => {
         setErrorMessage("");
         setSuccessMessage("");
         setOutput("");
-
+    //console.log("onSubmit ",formState.stream,formState)
         const payload = {
             model: formState.model_id,
             messages: [
@@ -73,7 +76,7 @@ const Llm = () => {
                 },
             ],
             max_tokens: parseInt(formState.max_tokens, 10),
-            stream: formState.stream === "true",
+            stream: formState.stream,
         };
 
         try {
@@ -81,13 +84,13 @@ const Llm = () => {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${getBearerToken()}`,
-                    Accept: formState.stream === "true" ? "text/event-stream" : "application/json",
+                    Accept: formState.stream? "text/event-stream" : "application/json",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(payload),
             });
 
-            if (formState.stream === "true") {
+            if (formState.stream) {
                 if (!response.body) {
                     throw new Error("ReadableStream not supported in this browser.");
                 }
@@ -170,6 +173,7 @@ const Llm = () => {
         }, 3000);
     };
 
+   // console.log("LLM ",formState.stream,formState)
     return (
         <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
