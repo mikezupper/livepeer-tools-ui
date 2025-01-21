@@ -109,7 +109,12 @@ const ImageToVideo = () => {
                 },
                 body: formData,
             });
-
+            if (response.status === 429) {
+                throw new Error("Too many requests. Please try again shortly.");
+            }
+            if (response.status !== 200) {
+                throw new Error("Failed processing your AI request.");
+            }
             const data = await response.json();
 
             if (data.error) {
@@ -125,9 +130,8 @@ const ImageToVideo = () => {
                 videoElement.controls = true;
                 outputElement.prepend(videoElement);
             }
-        } catch (error) {
-            console.error("[ImageToVideo] handleSubmit error:", error);
-            setErrorMessage("Failed to generate video, please try again.");
+        } catch (err) {
+            setErrorMessage(`Something went wrong [${err}]`);
         } finally {
             setLoading(false);
         }

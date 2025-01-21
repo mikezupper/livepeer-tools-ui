@@ -92,7 +92,12 @@ const ImageToText = () => {
                 },
                 body: formData,
             });
-
+            if (response.status === 429) {
+                throw new Error("Too many requests. Please try again shortly.");
+            }
+            if (response.status !== 200) {
+                throw new Error("Failed processing your AI request.");
+            }
             const data = await response.json();
 
             if (data.error) {
@@ -101,9 +106,9 @@ const ImageToText = () => {
                 setGeneratedText(data.text || "No text generated.");
                 setSuccessMessage("Text generated successfully!");
             }
-        } catch (error) {
-            console.error("[ImageToText] handleSubmit error:", error);
-            setErrorMessage("Failed to generate text, please try again.");
+        } catch (err) {
+            setErrorMessage(`Something went wrong [${err }]`);
+
         } finally {
             setLoading(false);
         }

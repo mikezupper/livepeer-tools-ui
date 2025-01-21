@@ -75,6 +75,12 @@ const TextToSpeech = () => {
                     "Authorization": `Bearer ${getBearerToken()}`
                 },
             })
+            if (response.status === 429) {
+                throw new Error("Too many requests. Please try again shortly.");
+            }
+            if (response.status !== 200) {
+                throw new Error("Failed processing your AI request.");
+            }
             const data = await response.json();
 
             if (data.error) {
@@ -87,9 +93,8 @@ const TextToSpeech = () => {
             if (asset_url.startsWith("http") === false)
                 asset_url = `${getGatewayUrl()}${audio.url}`;
             setOutput(asset_url);
-        } catch (error) {
-            console.error("[TextToSpeech] handleSubmit error:", error);
-            setErrorMessage("Failed to generate text, please try again.");
+        } catch (err) {
+            setErrorMessage(`Something went wrong [${err}]`);
             setOutput("")
         } finally {
             setLoading(false);

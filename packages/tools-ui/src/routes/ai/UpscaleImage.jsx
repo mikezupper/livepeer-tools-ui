@@ -100,7 +100,12 @@ const UpscaleImage = () => {
                 },
                 body: formData,
             });
-
+            if (response.status === 429) {
+                throw new Error("Too many requests. Please try again shortly.");
+            }
+            if (response.status !== 200) {
+                throw new Error("Failed processing your AI request.");
+            }
             const data = await response.json();
             console.log("upscale image data ",data);
             if (data.error) {
@@ -109,9 +114,8 @@ const UpscaleImage = () => {
                 setOutputImages(data.images || []);
                 setSuccessMessage("Image upscaled successfully!");
             }
-        } catch (error) {
-            console.error("Failed to upscale image", error);
-            setErrorMessage("Failed to upscale image, please try again.");
+        } catch (err) {
+            setErrorMessage(`Something went wrong [${err}]`);
         } finally {
             setLoading(false);
         }

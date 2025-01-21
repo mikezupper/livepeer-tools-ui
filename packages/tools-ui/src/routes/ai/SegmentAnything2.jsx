@@ -298,6 +298,12 @@ const SegmentAnything2 = () => {
                 },
                 body,
             });
+            if (response.status === 429) {
+                throw new Error("Too many requests. Please try again shortly.");
+            }
+            if (response.status !== 200) {
+                throw new Error("Failed processing your AI request.");
+            }
             const data = await response.json();
             // console.log("[SegmentAnything2] RESPONSE ", data);
 
@@ -314,15 +320,14 @@ const SegmentAnything2 = () => {
                 setOutputMasks(topMasks);
             }
         } catch (err) {
-            console.error("failed generating segment-anything-2 image", err);
-            setErrorMessage("Failed to generate image, please try again.");
+            setErrorMessage(`Something went wrong [${err }]`);
         } finally {
             setLoading(false);
         }
 
         setTimeout(() => {
             setErrorMessage("");
-        }, 3000);
+        }, 5000);
     };
 
     return (

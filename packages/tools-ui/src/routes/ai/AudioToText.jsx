@@ -74,7 +74,12 @@ const AudioToText = () => {
                 },
                 body: formData,
             });
-
+            if (response.status === 429) {
+                throw new Error("Too many requests. Please try again shortly.");
+            }
+            if (response.status !== 200) {
+                throw new Error("Failed processing your AI request.");
+            }
             const data = await response.json();
 
             if (data.error) {
@@ -85,9 +90,8 @@ const AudioToText = () => {
                 setChunks(chunks || []);
                 createDownloadButton(text);
             }
-        } catch (error) {
-            console.error("Failed generating audio-to-text output", error);
-            setErrorMessage("Failed to generate text, please try again.");
+        } catch (err) {
+            setErrorMessage(`Something went wrong [${err }]`);
         } finally {
             setIsGenerating(false);
         }

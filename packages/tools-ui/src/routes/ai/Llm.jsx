@@ -90,6 +90,12 @@ const Llm = () => {
                 body: JSON.stringify(payload),
             });
 
+            if (response.status === 429) {
+                throw new Error("Too many requests. Please try again shortly.");
+            }
+            if (response.status !== 200) {
+                throw new Error("Failed processing your AI request.");
+            }
             if (formState.stream) {
                 if (!response.body) {
                     throw new Error("ReadableStream not supported in this browser.");
@@ -162,15 +168,15 @@ const Llm = () => {
             setLoading(false);
             setSuccessMessage("Request successful!");
         } catch (err) {
-            console.error("Failed generating LLM output", err);
-            setErrorMessage("Failed to generate text, please try again.");
+            // console.error("Failed generating LLM output", err);
+            setErrorMessage(`Something went wrong [${err }]`);
             setLoading(false);
         }
 
         setTimeout(() => {
             setSuccessMessage("");
             setErrorMessage("");
-        }, 3000);
+        }, 5000);
     };
 
    // console.log("LLM ",formState.stream,formState)
