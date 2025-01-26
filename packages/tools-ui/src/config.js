@@ -1,5 +1,5 @@
-export const API_BASE_URL = import.meta.env.VITE_BASE_API_URL;
-export const orchDetailsURL = import.meta.env.VITE_ORCHESTRATOR_DETAIL_URL;
+export const livepeerApiBaseUrl = import.meta.env.VITE_LIVEPEER_API_BASE_URL;
+export const orchDetailsURL = `${import.meta.env.VITE_LIVEPEER_API_BASE_URL}/orchestrator`;
 export const regionsURL = import.meta.env.VITE_REGIONS_URL;
 export const pipelinesURL = import.meta.env.VITE_PIPELINE_URL;
 export const aiPerfStatsURL = import.meta.env.VITE_AI_PERF_STATS_URL;

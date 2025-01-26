@@ -1,18 +1,10 @@
 import { useLoaderData } from 'react-router-dom';
-import React, {useEffect, useRef, useState} from 'react';
+import React from 'react';
 import {
     Grid,
     Typography,
     Box,
-    TextField,
-    Button,
 } from '@mui/material';
-import Chart from 'chart.js/auto';
-import moment from 'moment';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
-import OrchestratorDetails from "./OrchestratorDetails.jsx";
-import { API_BASE_URL } from "../config.js";
-import {generateColors} from "./chartUtils.js";
 import GatewayDetails from "./GatewayDetails.jsx";
 
 /**

@@ -11,7 +11,7 @@ import Chart from 'chart.js/auto';
 import moment from 'moment';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import OrchestratorDetails from "./OrchestratorDetails.jsx";
-import { API_BASE_URL } from "../config.js";
+import { livepeerApiBaseUrl } from "../config.js";
 import {generateColors} from "./chartUtils.js";
 
 /**
@@ -168,7 +168,7 @@ function Orchestrator() {
         const months_usd_take_home = new Map();
 
         data.forEach(row => {
-            const month = moment(row.timestamp).format("MMMM YYYY");
+            const month = moment(row.last_event_timestamp).format("MMMM YYYY");
 
             // Initialize maps if month not present
             if (!months.has(month)) {
@@ -231,7 +231,7 @@ function Orchestrator() {
         const jobType = "both"; // Adjust as needed
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/payout/orchestrator/${ethAddress}`, {
+            const response = await fetch(`${livepeerApiBaseUrl}/payout/orchestrator/${ethAddress}`, {
                 headers: {
                     'Content-Type': "application/json",
                 },
@@ -281,7 +281,7 @@ function Orchestrator() {
         formData.append("end",rewardEndDate)
         formData.append("eth_address",orchestrator.eth_address)
         try {
-            const response = await fetch(`${API_BASE_URL}/api/report/reward/download`, {
+            const response = await fetch(`${livepeerApiBaseUrl}/report/reward/download`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -329,7 +329,7 @@ function Orchestrator() {
 
         try {
 
-            const response = await fetch(`${API_BASE_URL}/api/report/ticket/download`, {
+            const response = await fetch(`${livepeerApiBaseUrl}/report/ticket/download`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

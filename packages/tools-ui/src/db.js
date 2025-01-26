@@ -1,11 +1,11 @@
 // db.js
 import Dexie from 'dexie';
-const latestDbName = 'livepeer-tools-db';
+const latestDbName = 'tools-livepeer-cloud-db';
 
 const db = new Dexie(latestDbName);
 
 db.version(1.0).stores({
-    proposals: 'id, title, description, proposerAddress,status, createdAt',
+    proposals: 'id, title, description, proposerAddress,proposerName,proposerAvatar,voteStart,voteEnd,status, createdAt',
     votes: '++id, proposalId, voterAddress, support, stakeAmount, castAt, reason, params',
     orchestrators: 'eth_address, total_stake, reward_cut, fee_cut, activation_status, name, service_uri, avatar',
     capabilities: 'name',

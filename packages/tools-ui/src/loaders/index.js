@@ -1,6 +1,7 @@
 import DataService from "../api/DataService.js";
-import {API_BASE_URL} from "../config.js";
+
 import moment from "moment";
+import {livepeerApiBaseUrl} from "../config.js";
 
 (async () => {
     //console.log("init data services");
@@ -35,48 +36,48 @@ export const proposalLoader=async () => {
 
 export const gatewaysLoader=async () => {
     //console.log(`[index] gatewayLoader loading...`);
-    const gateways = await DataService.fetchData(`${API_BASE_URL}/api/gateways`);
+    const gateways = await DataService.fetchData(`${livepeerApiBaseUrl}/gateways`);
     //console.log(`[index] leaderboardLoader completed.`);
     return {gateways};
 }
 export const gatewayLoader=async ({params}) => {
     //console.log(`[index] gatewayLoader loading...`,params);
     const { eth_address } = params;
-    const gateway = await DataService.fetchData(`${API_BASE_URL}/api/gateway/${eth_address}`);
+    const gateway = await DataService.fetchData(`${livepeerApiBaseUrl}/gateway/${eth_address}`);
     //console.log(`[index] gatewayLoader completed.`);
     return {gateway};
 }
 export const dailyPayoutReportLoader=async ({ params }) => {
     //console.log(`[index] dailyPayoutReportLoader loading...`,params);
     const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/daily/${date}`);
+    const payoutData = await DataService.fetchData(`${livepeerApiBaseUrl}/payout/daily/${date}`);
     //console.log(`[index] dailyPayoutReportLoader completed.`);
     return payoutData;
 }
 export const weeklyPayoutReportLoader=async ({ params }) => {
     //console.log(`[index] weeklyPayoutReportLoader loading...`,params);
     const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/weekly/${date}`);
+    const payoutData = await DataService.fetchData(`${livepeerApiBaseUrl}/payout/weekly/${date}`);
     //console.log(`[index] weeklyPayoutReportLoader completed.`);
     return payoutData;
 }
 export const monthlyPayoutReportLoader=async ({ params }) => {
     //console.log(`[index] monthlyPayoutReportLoader loading...`,params);
     const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/monthly/${date}`);
+    const payoutData = await DataService.fetchData(`${livepeerApiBaseUrl}/payout/monthly/${date}`);
     //console.log(`[index] monthlyPayoutReportLoader completed.`);
     return payoutData;
 }
 export const orchestratorsLoader=async () => {
     //console.log(`[index] orchestratorLoader loading...`);
-    const orchestrators = await DataService.fetchData(`${API_BASE_URL}/api/orchestrator`);
+    const orchestrators = await DataService.fetchData(`${livepeerApiBaseUrl}/orchestrator`);
     //console.log(`[index] orchestratorLoader completed.`);
     return {orchestrators};
 }
 export const orchestratorLoader=async ({params}) => {
     //console.log(`[index] orchestratorLoader loading...`,params);
     const { eth_address } = params;
-    const orchestrator = await DataService.fetchData(`${API_BASE_URL}/api/orchestrator/${eth_address}`);
+    const orchestrator = await DataService.fetchData(`${livepeerApiBaseUrl}/orchestrator/${eth_address}`);
     //console.log(`[index] orchestratorLoader completed.`);
     return {orchestrator};
 }
@@ -97,7 +98,7 @@ export const topPayoutReportLoader = async ({ params }) => {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/payout/report`, {
+        const response = await fetch(`${livepeerApiBaseUrl}/payout/report`, {
             headers: {
                 'Content-Type': 'application/json',
             },
