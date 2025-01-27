@@ -34,7 +34,9 @@ const PayoutSummaryReport = ({report_type}) => {
         total_ticket,
         total_orchs,
         total_eth,
+        total_usd,
         total_orch_commission_eth,
+        total_orch_commission_usd,
         orch_summaries,
     } = payoutData;
 
@@ -46,22 +48,30 @@ const PayoutSummaryReport = ({report_type}) => {
         },
         {
             field: 'orch', headerName: 'Orchestrator', flex: 1,
-            sortable: false,
+            sortable: false
         },
         {
             field: 'orch_total_ticket',
-            headerName: 'Tickets Won',
+            headerName: 'Tix',
             type: 'number',
             flex: 1,
-            sortable: true,
+            sortable: true, maxWidth: 50
         },
         {
             field: 'orch_total_eth',
-            headerName: 'Total (ETH)',
+            headerName: 'Total',
             type: 'number',
             flex: 1,
             sortable: true,
             valueFormatter: (params) => `${params.toFixed(4)}`,
+        },
+        {
+            field: 'orch_total_usd',
+            headerName: 'Total (USD)',
+            type: 'number',
+            flex: 1,
+            sortable: true,
+            valueFormatter: (params) => `$${params.toFixed(2)}`,
         },
         {
             field: 'orch_total_percent',
@@ -69,11 +79,11 @@ const PayoutSummaryReport = ({report_type}) => {
             type: 'number',
             flex: 1,
             sortable: true,
-            // valueFormatter: (params) => `${params.toFixed(2)}%`,
+            valueFormatter: (params) => `${params.toFixed(2)}%`,
         },
         {
             field: 'orch_total_commission_eth',
-            headerName: 'Commission (ETH)',
+            headerName: 'Commission',
             type: 'number',
             flex: 1,
             sortable: true,
@@ -85,7 +95,15 @@ const PayoutSummaryReport = ({report_type}) => {
             type: 'number',
             flex: 1,
             sortable: true,
-            // valueFormatter: (params) => `${params.value.toFixed(2)}%`,
+            valueFormatter: (params) => `${params.toFixed(2)}%`,
+        },
+        {
+            field: 'orch_total_commission_usd',
+            headerName: 'Commission (USD)',
+            type: 'number',
+            flex: 1,
+            sortable: true,
+            valueFormatter: (params) => `$${params.toFixed(2)}`,
         },
     ];
 
@@ -102,32 +120,49 @@ const PayoutSummaryReport = ({report_type}) => {
                 {report_type} Summary Report: {date}
             </Typography>
 
-            <SimpleDateInput initialDate={date}/>
+            <SimpleDateInput initialDate={date} />
 
-            <Card style={{marginTop: '20px'}}>
-                <CardContent>
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6} md={3}  align={"center"}>
-                            <Typography variant="subtitle1" align={"center"}>Number of Winning Tickets</Typography>
-                            <Typography variant="h6" align={"center"}>{total_ticket}</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle1" align={"center"}>Number of Orchestrators Earned</Typography>
-                            <Typography variant="h6" align={"center"}>{total_orchs}</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle1" align={"center"}>Transcoding Fees</Typography>
-                            <Typography variant="h6" align={"center"}>{total_eth.toFixed(4)} ETH</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle1" align={"center"}>Orch Commission</Typography>
-                            <Typography variant="h6" align={"center"}>{total_orch_commission_eth.toFixed(4)} ETH</Typography>
-                        </Grid>
-                    </Grid>
-                </CardContent>
-            </Card>
+            <Grid container spacing={3}>
+                {/* Totals Card */}
+                <Grid item xs={12} md={4}>
+                    <Card style={{ marginTop: '20px' }}>
+                        <CardContent>
+                            <Typography variant="subtitle1">Number of Winning Tickets</Typography>
+                            <Typography variant="h6">{total_ticket}</Typography>
+                            <Typography variant="subtitle1" style={{ marginTop: '10px' }}>Number of Orchestrators Earned</Typography>
+                            <Typography variant="h6">{total_orchs}</Typography>
+                        </CardContent>
+                    </Card>
+                </Grid>
 
-            <Typography variant="h5" gutterBottom style={{marginTop: '30px'}}>
+                {/* USD Totals Card */}
+                <Grid item xs={12} md={4}>
+                    <Card style={{ marginTop: '20px' }}>
+                        <CardContent>
+                            <Typography variant="subtitle1">Transcoding Fees (USD)</Typography>
+                            <Typography variant="h6">${total_usd.toFixed(2)}</Typography>
+                            <Typography variant="subtitle1" style={{ marginTop: '10px' }}>Orch Commission (USD)</Typography>
+                            <Typography variant="h6">${total_orch_commission_usd.toFixed(2)}</Typography>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* ETH Totals Card */}
+                <Grid item xs={12} md={4}>
+                    <Card style={{ marginTop: '20px' }}>
+                        <CardContent>
+                            <Typography variant="subtitle1">Transcoding Fees (ETH)</Typography>
+                            <Typography variant="h6">{total_eth.toFixed(4)} ETH</Typography>
+                            <Typography variant="subtitle1" style={{ marginTop: '10px' }}>Orch Commission (ETH)</Typography>
+                            <Typography variant="h6">{total_orch_commission_eth.toFixed(4)} ETH</Typography>
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
+
+
+
+            <Typography variant="h5" gutterBottom style={{ marginTop: '30px' }}>
                 Orchestrator Payout Details
             </Typography>
 
@@ -137,7 +172,7 @@ const PayoutSummaryReport = ({report_type}) => {
                         display: 'flex',
                         flexDirection: 'column',
                         flexGrow: 1,
-                        minHeight: 0, // Ensures the box can shrink if needed
+                        minHeight: 0,
                     }}
                 >
                     <DataGrid
@@ -154,9 +189,7 @@ const PayoutSummaryReport = ({report_type}) => {
                 </Box>
             </Paper>
 
-
-            {/* Optional: Date Navigation Buttons */}
-            <DateNavigation currentDate={date}/>
+            <DateNavigation currentDate={date} />
         </Box>
     );
 };
