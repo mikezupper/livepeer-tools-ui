@@ -243,7 +243,7 @@ const VotingHistoryList = () => {
                                 <Typography variant="body2">
                                     <strong>Total Stake Voted:</strong>{' '}
                                     {typeof selectedProposalData.totalStakeVoted === 'number'
-                                        ? formatNumber(selectedProposalData.totalStakeVoted)
+                                        ? formatNumber(selectedProposalData.totalStakeVoted,4)
                                         : selectedProposalData.totalStakeVoted}
                                 </Typography>
                             </Box>

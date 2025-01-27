@@ -36,12 +36,10 @@ const TopPayoutReport = () => {
 
     const ethRef = useRef(null);
     const usdRef = useRef(null);
-    const ticketsRef = useRef(null);
     const chartsRef = useRef({ eth: null, usd: null, tickets: null });
 
     const ethColors = generateColors(25);
     const usdColors = generateColors(25);
-    const ticketsColors = ['rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'];
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -72,6 +70,11 @@ const TopPayoutReport = () => {
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'nearest', // Ensures tooltips hover correctly
+                axis: 'xy', // Allow hover across both axes
+                intersect: false, // Prevent tooltips from requiring direct bar intersection
+            },
             plugins: {
                 datalabels: { display: false }, // Disable datalabels globally
                 legend: { position: 'top' },
@@ -83,7 +86,7 @@ const TopPayoutReport = () => {
                             // Use context.parsed.x for horizontal bars
                             const label = context.dataset.label || '';
                             const value = context.parsed.x;
-                            return label + ': ' + parseFloat(value).toFixed(2);
+                            return `${label}: ${parseFloat(value).toFixed(4)}`; // Format to 4 decimal places
                         },
                         footer: function(tooltipItems) {
                             // Calculate total using parsed.x for horizontal bars
@@ -91,7 +94,7 @@ const TopPayoutReport = () => {
                             tooltipItems.forEach((tooltipItem) => {
                                 total += tooltipItem.parsed.x || 0;
                             });
-                            return 'Total: ' + total.toFixed(2);
+                            return `Total: ${total.toFixed(4)}`; // Format to 4 decimal places
                         }
                     },
                     footerFont: { weight: 'bold' }
@@ -104,8 +107,8 @@ const TopPayoutReport = () => {
         // ETH Chart Setup with Stacked "Orch Share" and "Delegates Share"
         if (ethRef.current && payoutData.eth) {
             const ethTakeHome = payoutData.eth.map(entry => entry.take_home_value);
-            const ethTotal = payoutData.eth.map(entry => entry.value);
-            const ethRest = ethTotal.map((total, idx) => total - ethTakeHome[idx]);
+            const ethTotal = payoutData.eth.map(entry => entry.total)
+            const ethRest = ethTotal.map((t, idx) => t - ethTakeHome[idx] || 0.00);
 
             chartsRef.current.eth = new Chart(ethRef.current, {
                 type: 'bar',
@@ -143,8 +146,8 @@ const TopPayoutReport = () => {
         // USD Chart Setup with Stacked "Orch Share" and "Rest"
         if (usdRef.current && payoutData.usd) {
             const usdTakeHome = payoutData.usd.map(entry => entry.take_home_value);
-            const usdTotal = payoutData.usd.map(entry => entry.value);
-            const usdRest = usdTotal.map((total, idx) => total - usdTakeHome[idx]);
+            const usdTotal = payoutData.usd.map(entry => entry.total);
+            const usdRest = usdTotal.map((t, idx) => t - usdTakeHome[idx] || 0.00);
 
             chartsRef.current.usd = new Chart(usdRef.current, {
                 type: 'bar',
@@ -179,41 +182,12 @@ const TopPayoutReport = () => {
             });
         }
 
-        // Tickets Chart Setup (unchanged)
-        if (ticketsRef.current && payoutData.tickets) {
-            chartsRef.current.tickets = new Chart(ticketsRef.current, {
-                type: 'bar',
-                data: {
-                    labels: ['USD', '# of Tickets'],
-                    datasets: [
-                        {
-                            label: '# of Payouts',
-                            data: [
-                                payoutData.usd.length > 0 ? payoutData.usd[0].value : 0,
-                                payoutData.tickets.length > 0 ? payoutData.tickets[0].value : 0,
-                            ],
-                            backgroundColor: ticketsColors,
-                            borderColor: ticketsColors.map((color) => color.replace('0.6', '1')),
-                            borderWidth: 1,
-                        },
-                    ],
-                },
-                options: {
-                    ...commonOptions,
-                    plugins: {
-                        ...commonOptions.plugins,
-                        title: { display: true, text: 'Tickets Payouts' }
-                    },
-                },
-            });
-        }
-
         return () => {
             Object.values(chartsRef.current).forEach((chart) => {
                 if (chart) chart.destroy();
             });
         };
-    }, [payoutData, ethColors, usdColors, ticketsColors]);
+    }, [payoutData, ethColors, usdColors]);
 
     const handleCloseSnackbar = (event, reason) => {
         if (reason === 'clickaway') return;
@@ -407,30 +381,6 @@ const TopPayoutReport = () => {
                             ref={usdRef}
                             style={{ width: '100%', height: '100%' }}
                             aria-label="USD Payouts Chart"
-                            role="img"
-                        ></canvas>
-                    </Box>
-                </Grid>
-
-                {/* Tickets Chart */}
-                <Grid item xs={12} md={8}>
-                    <Box
-                        sx={{
-                            width: '100%',
-                            height: { xs: '400px', md: '600px' },
-                            border: '1px solid #ccc',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            position: 'relative',
-                        }}
-                    >
-                        <canvas
-                            id="tickets"
-                            ref={ticketsRef}
-                            style={{ width: '100%', height: '100%' }}
-                            aria-label="Tickets Payouts Chart"
                             role="img"
                         ></canvas>
                     </Box>

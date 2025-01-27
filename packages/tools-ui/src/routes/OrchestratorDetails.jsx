@@ -12,6 +12,7 @@ import {
 import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import {useLocation, useNavigate} from "react-router-dom";
+import {formatNumber} from "./votingUtils.jsx";
 
 // Styled component for the Ethereum address tooltip
 const AddressTooltip = styled(Tooltip)(({ theme }) => ({
@@ -124,7 +125,7 @@ function OrchestratorDetails({ orch, idx }) {
                                     Total Stake
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
-                                    {orch.total_stake} ETH
+                                    {formatNumber(orch.total_stake)} ETH
                                 </Typography>
                             </Box>
                         </Grid>

@@ -51,10 +51,10 @@ export function getSupportColor(support, theme) {
     }
 }
 
-export const formatNumber = (number) => {
+export const formatNumber = (number, digits=2) => {
     return number.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
     });
 };
 
