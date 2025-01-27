@@ -1,37 +1,17 @@
 // db.js
 import Dexie from 'dexie';
-const latestDbName = 'tools-livepeer-cloud-db';
+const latestDbName = 'lp-tools-db';
 
 const db = new Dexie(latestDbName);
 
 db.version(1.0).stores({
     proposals: 'id, title, description, proposerAddress,proposerName,proposerAvatar,voteStart,voteEnd,status, createdAt',
     votes: '++id, proposalId, voterAddress, support, stakeAmount, castAt, reason, params',
-    orchestrators: 'eth_address, total_stake, reward_cut, fee_cut, activation_status, name, service_uri, avatar',
+    // payouts: 'transaction_id,eth_address,timestamp,total_tokens,orch_tokens,reward_cut,txn_fee,txn_fee_usd,lpt_price,eth_price,total_value_usd',
+    orchestrators: 'eth_address, total_stake, reward_cut, fee_cut, activation_status, name, service_uri, avatar, last_event_timestamp, [total_stake+activation_status]',
+    gateways: 'eth_address, deposit, reserve, name, avatar, [deposit+reserve]',
     capabilities: 'name',
-    metadata: 'key, value'
 });
-
-async function initializeMetadata() {
-    const lastProposalBlock = await db.metadata.get('lastProposalBlock');
-    const lastVoteBlock = await db.metadata.get('lastVoteBlock');
-
-    const updates = {};
-
-    if (!lastProposalBlock) {
-        updates.key = 'lastProposalBlock';
-        updates.value = 162890764;
-        await db.metadata.put(updates);
-    }
-
-    if (!lastVoteBlock) {
-        updates.key = 'lastVoteBlock';
-        updates.value = 162890764;
-        await db.metadata.put(updates);
-    }
-}
-
-initializeMetadata();
 
 if (indexedDB.databases) {
     indexedDB.databases()

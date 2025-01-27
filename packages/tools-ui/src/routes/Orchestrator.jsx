@@ -1,11 +1,11 @@
-import { useLoaderData } from 'react-router-dom';
+import {useLoaderData, useLocation, useNavigate} from 'react-router-dom';
 import React, {useEffect, useRef, useState} from 'react';
 import {
     Grid,
     Typography,
     Box,
     TextField,
-    Button,
+    Button, Breadcrumbs, Link,
 } from '@mui/material';
 import Chart from 'chart.js/auto';
 import moment from 'moment';
@@ -37,6 +37,10 @@ const buildDatapoints = (iterator, mapFn) => {
  */
 function Orchestrator() {
     const { orchestrator } = useLoaderData();
+    const navigate= useNavigate()
+
+    const location = useLocation();
+    const isOnDetailsPage = location.pathname === `/orchestrator/${orchestrator.eth_address}`;
 
     // Refs for Chart.js canvases
     const payoutsRef = useRef(null);
@@ -364,9 +368,20 @@ function Orchestrator() {
 
     return (
         <Box sx={{ py: 4 }}>
-            <Typography variant="h4" gutterBottom>
-                Orchestrator
-            </Typography>
+            {/* Breadcrumb for navigating back */}
+            {isOnDetailsPage && (
+                <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+                    <Link
+                        underline="hover"
+                        color="inherit"
+                        onClick={() => navigate('/orchestrators')} // Navigate to the orchestrator list
+                        style={{ cursor: 'pointer' }}
+                    >
+                        Orchestrator List
+                    </Link>
+                    <Typography color="textPrimary">{orchestrator.name}</Typography>
+                </Breadcrumbs>
+            )}
             <Grid container spacing={4}>
                 <OrchestratorDetails orch={orchestrator} key={orchestrator.eth_address} />
 

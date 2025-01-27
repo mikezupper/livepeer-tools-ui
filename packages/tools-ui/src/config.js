@@ -1,5 +1,7 @@
 export const livepeerApiBaseUrl = import.meta.env.VITE_LIVEPEER_API_BASE_URL;
 export const orchDetailsURL = `${import.meta.env.VITE_LIVEPEER_API_BASE_URL}/orchestrator`;
+// export const payoutsURL = `${import.meta.env.VITE_LIVEPEER_API_BASE_URL}/sync/payouts`;
+export const gatewaysURL = `${import.meta.env.VITE_LIVEPEER_API_BASE_URL}/gateways`;
 export const regionsURL = import.meta.env.VITE_REGIONS_URL;
 export const pipelinesURL = import.meta.env.VITE_PIPELINE_URL;
 export const aiPerfStatsURL = import.meta.env.VITE_AI_PERF_STATS_URL;

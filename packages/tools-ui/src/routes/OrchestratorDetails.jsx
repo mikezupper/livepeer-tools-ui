@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 
 // Styled component for the Ethereum address tooltip
 const AddressTooltip = styled(Tooltip)(({ theme }) => ({
@@ -24,6 +24,9 @@ const AddressTooltip = styled(Tooltip)(({ theme }) => ({
 
 function OrchestratorDetails({ orch, idx }) {
     const navigate= useNavigate()
+    const location = useLocation();
+    const isOnDetailsPage = location.pathname === `/orchestrator/${orch.eth_address}`;
+
     return (
         <Grid item xs={12} sm={6} md={4} key={orch.eth_address}>
             <Card
@@ -31,22 +34,32 @@ function OrchestratorDetails({ orch, idx }) {
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
+                    backgroundColor: orch.activation_status ? 'white' : 'grey.200', // Light grey when inactive
                     '&:hover': {
                         boxShadow: 6,
                     },
                 }}
-                onClick={()=>navigate(`/orchestrator/${orch.eth_address}`)}
             >
                 <CardHeader
                     avatar={
                         orch.avatar ? (
-                            <Avatar src={orch.avatar} alt={orch.name} />
+                            <Avatar
+                                src={orch.avatar}
+                                alt={orch.name}
+                                sx={{ width: 56, height: 56 }} // Increase size of the avatar
+                            />
                         ) : (
-                            <Avatar>{orch.name.charAt(0)}</Avatar>
+                            <Avatar sx={{ width: 56, height: 56 }}> {/* Default avatar size */}
+                                {orch.name.charAt(0)}
+                            </Avatar>
                         )
                     }
                     title={
-                        <Typography variant="h6" component="div">
+                        <Typography
+                            variant="h5" // Change to a larger variant
+                            component="div"
+                            sx={{ fontWeight: 'bold' }} // Optional: Make it bold
+                        >
                             {orch.name}
                         </Typography>
                     }
@@ -116,7 +129,19 @@ function OrchestratorDetails({ orch, idx }) {
                             </Box>
                         </Grid>
                     </Grid>
-                    <Box sx={{ mt: 3 }}>
+                    {!isOnDetailsPage &&(
+                    <Box sx={{ mt: 3, mb:3 }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            fullWidth
+                            onClick={() => navigate(`/orchestrator/${orch.eth_address}`)}
+                        >
+                            View Details
+                        </Button>
+                    </Box>)}
+                    <Box sx={{ mt: 3, mb:3 }}>
+
                         <Button
                             variant="contained"
                             color="primary"

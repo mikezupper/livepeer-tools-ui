@@ -3,14 +3,18 @@ import db from '../db.js';
 import {
     aiLeaderboardStatsURL,
     aiPerfStatsURL,
-    leaderboardStatsURL, livepeerApiBaseUrl, orchDetailsURL,
+    gatewaysURL,
+    leaderboardStatsURL,
+    livepeerApiBaseUrl,
+    orchDetailsURL,
     perfStatsURL,
     pipelinesURL,
     regionsURL
 } from "../config.js";
-import { getGatewayUrl } from "../routes/ai/utils.js";
-import { from } from "rxjs";
-import { map } from "rxjs/operators";
+import {getGatewayUrl} from "../routes/ai/utils.js";
+import {from} from "rxjs";
+import {map} from "rxjs/operators";
+
 const getFirstLine = (text) => {
     if (!text) return '';
     let firstLine = text.split('\n')[0];
@@ -28,7 +32,7 @@ async function fetchAndStoreProposals() {
             return;
         }
         await db.proposals.clear();
-        await db.proposals.bulkPut(data.map(p=>{
+        await db.proposals.bulkPut(data.map(p => {
             return {
                 id: p.proposal_id,
                 title: getFirstLine(p.description),
@@ -39,7 +43,7 @@ async function fetchAndStoreProposals() {
                 voteStart: p.vote_start?.toNumber ? p.vote_start.toNumber() : 0,
                 voteEnd: p.vote_end?.toNumber ? p.vote_end.toNumber() : 0,
                 status: p.status,
-                createdAt: p.last_event_timestamp ? new Date(p.last_event_timestamp): null
+                createdAt: p.last_event_timestamp ? new Date(p.last_event_timestamp) : null
             }
         }))
     } catch (error) {
@@ -56,7 +60,7 @@ async function fetchAndStoreVotes() {
             console.error("votes data is not an array.");
             return;
         }
-        let v= votes.map(v => {
+        let v = votes.map(v => {
             const nSupport = v.support;
             let supportMsg = "No";
             switch (nSupport) {
@@ -70,8 +74,17 @@ async function fetchAndStoreVotes() {
                     supportMsg = "No";
                     break;
             }
-            return {proposalId: v.proposal_id,voterAddress: v.voter,voterName: v.voter_name,voterAvatar:v.voter_avatar, support: supportMsg
-                , stakeAmount: v.weight, reason: v.reason,castAt: v.last_event_timestamp ? new Date(v.last_event_timestamp): null}
+            return {
+                proposalId: v.proposal_id,
+                voterAddress: v.voter,
+                voterName: v.voter_name,
+                voterAvatar: v.voter_avatar,
+                support: supportMsg
+                ,
+                stakeAmount: v.weight,
+                reason: v.reason,
+                castAt: v.last_event_timestamp ? new Date(v.last_event_timestamp) : null
+            }
         });
         // console.log("votes:", v);
         await db.votes.clear();
@@ -92,35 +105,58 @@ async function fetchAndStoreOrchestrators() {
             return;
         }
 
-        for (const orch of orchestrators) {
-            const {
-                eth_address,
-                total_stake,
-                reward_cut,
-                fee_cut,
-                activation_status,
-                name,
-                service_uri,
-                avatar
-            } = orch;
+        // Validate and sanitize data before storing
+        const sanitizedOrchestrators = orchestrators.map((orch) => ({
+            eth_address: orch.eth_address || null, // Ensure eth_address exists
+            total_stake: orch.total_stake || 0.00, // Default to 0 if undefined
+            reward_cut: orch.reward_cut || 0.00, // Default to 0 if undefined
+            fee_cut: orch.fee_cut || 0.00, // Default to 0 if undefined
+            activation_status: orch.activation_status ? 1 : 0, // Convert truthy/falsy values to 1 or 0
+            name: orch.name || null, // Default name
+            service_uri: orch.service_uri || null, // Default empty string
+            avatar: orch.avatar || null, // Default empty string
+            last_event_timestamp: orch.last_event_timestamp || Date.now()
+        }));
 
-            if (!eth_address) continue;
+        // Clear existing data and insert sanitized data
+        await db.orchestrators.clear();
+        await db.orchestrators.bulkPut(sanitizedOrchestrators);
 
-            const orchestrator = {
-                eth_address: eth_address.toLowerCase(),
-                total_stake: Number(total_stake),
-                reward_cut: Number(reward_cut),
-                fee_cut: Number(fee_cut),
-                activation_status: Boolean(activation_status),
-                name: name || '',
-                service_uri: service_uri || '',
-                avatar: avatar || ''
-            };
-
-            await db.orchestrators.put(orchestrator);
-        }
     } catch (error) {
         console.error("Error fetching orchestrator data:", error);
+    }
+}
+
+//
+// async function fetchAndStorePayouts() {
+//     try {
+//         const response = await fetch(`${payoutsURL}/0`);
+//         const data = await response.json();
+//
+//         if (!Array.isArray(data)) {
+//             console.error("fetch data is not an array.");
+//             return;
+//         }
+//         db.payouts.clear();
+//         db.payouts.bulkPut(data);
+//
+//     } catch (error) {
+//         console.error("Error fetching payout data:", error);
+//     }
+// }
+
+async function fetchAndStoreGateways() {
+    try {
+        const response = await fetch(gatewaysURL);
+        const gateways = await response.json();
+
+        if (!Array.isArray(gateways)) {
+            console.error("gateways data is not an array.");
+            return;
+        }
+        await db.gateways.bulkPut(gateways);
+    } catch (error) {
+        console.error("Error fetching gateways data:", error);
     }
 }
 
@@ -201,17 +237,23 @@ export async function fetchAndStoreCapabilities() {
 const TURN_OFF_UPDATES = false;
 
 async function periodicUpdate() {
-    if (TURN_OFF_UPDATES == false) {
+    if (TURN_OFF_UPDATES === false) {
         try {
-            await fetchAndStoreOrchestrators();
-            await fetchAndStoreProposals();
-            await fetchAndStoreVotes();
-            await fetchAndStoreCapabilities();
+            // Run all fetchAndStore* methods concurrently
+            await Promise.all([
+                // fetchAndStorePayouts(),
+                fetchAndStoreOrchestrators(),
+                fetchAndStoreGateways(),
+                fetchAndStoreProposals(),
+                fetchAndStoreVotes(),
+                fetchAndStoreCapabilities(),
+            ]);
+            console.log("Periodic update completed successfully.");
         } catch (error) {
             console.error("Error during periodic update:", error);
         }
     } else {
-        console.warn("periodic updates are turned off....");
+        console.warn("Periodic updates are turned off...");
     }
 }
 
@@ -231,6 +273,40 @@ export default class DataServices {
             throw new Error('Failed to fetch data');
         }
         return response.json();
+    }
+
+    static async getOrchestrator(eth_address) {
+        return await db.orchestrators.get(eth_address);
+    }
+
+    static async getOrchestrators() {
+        let o = await db.orchestrators
+            .orderBy('total_stake')
+            .reverse()
+            .toArray();
+        return o.map((orchestrator, idx) => {
+            return {...orchestrator, rank: idx};
+        })
+            .sort((a, b) => {
+                // If activation_status differs, prioritize true over false
+                if (a.activation_status !== b.activation_status) {
+                    return a.activation_status === 1 ? -1 : 1;
+                }
+                // Otherwise, preserve the total_stake order
+                return 0;
+            });
+    }
+
+    static async getGateway(eth_address) {
+        return await db.gateways.get(eth_address);
+    }
+
+    static async getGateways() {
+        const gateways = await db.gateways
+            .orderBy('[deposit+reserve]')
+            .reverse()
+            .toArray()
+        return gateways || [];
     }
 
     static async getProposals() {

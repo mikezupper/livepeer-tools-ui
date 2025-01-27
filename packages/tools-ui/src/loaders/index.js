@@ -36,14 +36,14 @@ export const proposalLoader=async () => {
 
 export const gatewaysLoader=async () => {
     //console.log(`[index] gatewayLoader loading...`);
-    const gateways = await DataService.fetchData(`${livepeerApiBaseUrl}/gateways`);
+    const gateways = await DataService.getGateways();
     //console.log(`[index] leaderboardLoader completed.`);
     return {gateways};
 }
 export const gatewayLoader=async ({params}) => {
     //console.log(`[index] gatewayLoader loading...`,params);
     const { eth_address } = params;
-    const gateway = await DataService.fetchData(`${livepeerApiBaseUrl}/gateway/${eth_address}`);
+    const gateway = await DataService.getGateway(eth_address);
     //console.log(`[index] gatewayLoader completed.`);
     return {gateway};
 }
@@ -70,14 +70,14 @@ export const monthlyPayoutReportLoader=async ({ params }) => {
 }
 export const orchestratorsLoader=async () => {
     //console.log(`[index] orchestratorLoader loading...`);
-    const orchestrators = await DataService.fetchData(`${livepeerApiBaseUrl}/orchestrator`);
+    const orchestrators= await DataService.getOrchestrators();
     //console.log(`[index] orchestratorLoader completed.`);
     return {orchestrators};
 }
 export const orchestratorLoader=async ({params}) => {
     //console.log(`[index] orchestratorLoader loading...`,params);
     const { eth_address } = params;
-    const orchestrator = await DataService.fetchData(`${livepeerApiBaseUrl}/orchestrator/${eth_address}`);
+    const orchestrator= await DataService.getOrchestrator(eth_address);
     //console.log(`[index] orchestratorLoader completed.`);
     return {orchestrator};
 }
