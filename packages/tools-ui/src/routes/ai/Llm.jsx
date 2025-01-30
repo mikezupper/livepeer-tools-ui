@@ -68,7 +68,7 @@ const Llm = () => {
             messages: [
                 {
                     role: "system",
-                    content: formState.system || "You are a Livepeer expert",
+                    content: formState.system || "",
                 },
                 {
                     role: "user",
