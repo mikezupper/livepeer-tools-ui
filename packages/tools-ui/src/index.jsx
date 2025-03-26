@@ -99,7 +99,7 @@ const router = createBrowserRouter(
             />
             <Route
                 path="reports/weekly"
-                element={<Navigate to={`/reports/monthly/${currentDate}`} replace />}
+                element={<Navigate to={`/reports/weekly/${currentDate}`} replace />}
                 hydrateFallbackElement={<CircularProgress />}
                 />
             <Route

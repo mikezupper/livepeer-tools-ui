@@ -35,6 +35,8 @@ const PayoutSummaryReport = ({report_type}) => {
         total_orchs,
         total_eth,
         total_orch_commission_eth,
+        total_usd,
+        total_orch_commission_usd,
         orch_summaries,
     } = payoutData;
 
@@ -64,12 +66,20 @@ const PayoutSummaryReport = ({report_type}) => {
             valueFormatter: (params) => `${params.toFixed(4)}`,
         },
         {
+            field: 'orch_total_usd',
+            headerName: 'Total (USD)',
+            type: 'number',
+            flex: 1,
+            sortable: true,
+            valueFormatter: (params) => `$${params.toFixed(2)}`,
+        },
+        {
             field: 'orch_total_percent',
             headerName: 'Total (%)',
             type: 'number',
             flex: 1,
             sortable: true,
-            // valueFormatter: (params) => `${params.toFixed(2)}%`,
+            valueFormatter: (params) => `${params.toFixed(2)}%`,
         },
         {
             field: 'orch_total_commission_eth',
@@ -80,12 +90,20 @@ const PayoutSummaryReport = ({report_type}) => {
             valueFormatter: (params) => `${params.toFixed(4)}`,
         },
         {
+            field: 'orch_total_commission_usd',
+            headerName: 'Commission (USD)',
+            type: 'number',
+            flex: 1,
+            sortable: true,
+            valueFormatter: (params) => `$${params.toFixed(2)}`,
+        },
+        {
             field: 'orch_total_commission_percent',
             headerName: 'Commission (%)',
             type: 'number',
             flex: 1,
             sortable: true,
-            // valueFormatter: (params) => `${params.value.toFixed(2)}%`,
+            valueFormatter: (params) => `${params.toFixed(2)}%`,
         },
     ];
 
@@ -117,11 +135,21 @@ const PayoutSummaryReport = ({report_type}) => {
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="subtitle1" align={"center"}>Transcoding Fees</Typography>
-                            <Typography variant="h6" align={"center"}>{total_eth.toFixed(4)} ETH</Typography>
+                            <Typography variant="h6" align={"center"}>
+                                {total_eth.toFixed(4)} ETH
+                            </Typography>
+                            <Typography variant="subtitle2" align={"center"}>
+                                ${total_usd.toFixed(2)} USD
+                            </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="subtitle1" align={"center"}>Orch Commission</Typography>
-                            <Typography variant="h6" align={"center"}>{total_orch_commission_eth.toFixed(4)} ETH</Typography>
+                            <Typography variant="h6" align={"center"}>
+                                {total_orch_commission_eth.toFixed(4)} ETH
+                            </Typography>
+                            <Typography variant="subtitle2" align={"center"}>
+                                ${total_orch_commission_usd.toFixed(2)} USD
+                            </Typography>
                         </Grid>
                     </Grid>
                 </CardContent>
@@ -153,7 +181,6 @@ const PayoutSummaryReport = ({report_type}) => {
                     />
                 </Box>
             </Paper>
-
 
             {/* Optional: Date Navigation Buttons */}
             <DateNavigation currentDate={date}/>
