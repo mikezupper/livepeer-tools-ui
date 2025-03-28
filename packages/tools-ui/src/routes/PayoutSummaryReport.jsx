@@ -9,16 +9,20 @@ import {
     Box,
     Paper,
 } from '@mui/material';
-import {useLoaderData, useParams} from "react-router-dom";
+import {useLoaderData, useLocation, useParams} from "react-router-dom";
 import SimpleDateInput from './SimpleDateInput';
 import DateNavigation from './DateNavigation';
 import {DataGrid} from '@mui/x-data-grid';
 
 // Main Component
 const PayoutSummaryReport = ({report_type}) => {
-    const {date} = useParams();
+    const { date } = useParams();
+    const location = useLocation();
     const payoutData = useLoaderData();
 
+    // Get job_type from URL query parameters
+    const queryParams = new URLSearchParams(location.search);
+    const jobType = queryParams.get('job_type') || 'both';
     if (!payoutData) {
         return (
             <Box p={4}>
@@ -117,7 +121,7 @@ const PayoutSummaryReport = ({report_type}) => {
     return (
         <Box p={4}>
             <Typography variant="h4" gutterBottom>
-                {report_type} Summary Report: {date}
+                {report_type} Summary Report: {date} ({jobType === 'both' ? 'All Jobs' : jobType === 'ai' ? 'AI' : 'Transcoding'})
             </Typography>
 
             <SimpleDateInput initialDate={date}/>

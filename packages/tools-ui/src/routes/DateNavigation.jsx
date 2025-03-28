@@ -1,24 +1,27 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 import { Button, Box } from '@mui/material';
 
 const DateNavigation = ({ currentDate }) => {
     const prevDate = getPreviousDate(currentDate);
     const nextDate = getNextDate(currentDate);
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const jobType = queryParams.get('job_type') || 'both';
 
     return (
         <Box display="flex" justifyContent="space-between" mt={4}>
             <Button
                 variant="outlined"
                 component={Link}
-                to={`/reports/daily/${prevDate}`}
+                to={`/reports/daily/${prevDate}?job_type=${jobType}`}
             >
                 Previous Day
             </Button>
             <Button
                 variant="outlined"
                 component={Link}
-                to={`/reports/daily/${nextDate}`}
+                to={`/reports/daily/${nextDate}?job_type=${jobType}`}
             >
                 Next Day
             </Button>

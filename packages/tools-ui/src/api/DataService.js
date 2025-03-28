@@ -453,10 +453,14 @@ export default class DataServices {
                 .reduce((acc, v) => acc + v.stakeAmount, 0);
 
             const totalVoted = forStake + againstStake + abstainStake;
-
+            // Calculate for percentages based on total votes including abstains
             const forPct = totalVoted > 0 ? (forStake / totalVoted) * 100 : 0;
             const againstPct = totalVoted > 0 ? (againstStake / totalVoted) * 100 : 0;
             const abstainPct = totalVoted > 0 ? (abstainStake / totalVoted) * 100 : 0;
+
+            // Add a new property for the correct total support calculation (excluding abstain)
+            const totalForAgainst = forStake + againstStake;
+            const totalSupportPct = totalForAgainst > 0 ? (forStake / totalForAgainst) * 100 : 0;
 
             proposal.forStake = forStake;
             proposal.againstStake = againstStake;
@@ -464,6 +468,7 @@ export default class DataServices {
             proposal.forPct = forPct;
             proposal.againstPct = againstPct;
             proposal.abstainPct = abstainPct;
+            proposal.totalSupportPct = totalSupportPct; // New property
         }
         proposals.sort((a, b) => b.createdAt - a.createdAt);
         return proposals;

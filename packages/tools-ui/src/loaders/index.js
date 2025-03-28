@@ -46,24 +46,39 @@ export const gatewayLoader=async ({params}) => {
     //console.log(`[index] gatewayLoader completed.`);
     return {gateway};
 }
-export const dailyPayoutReportLoader=async ({ params }) => {
-    //console.log(`[index] dailyPayoutReportLoader loading...`,params);
+export const dailyPayoutReportLoader = async ({ params, request }) => {
+    //console.log(`[index] dailyPayoutReportLoader loading...`, params);
     const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/daily/${date}`);
+
+    // Get job_type from URL
+    const url = new URL(request.url);
+    const jobType = url.searchParams.get('job_type') || 'both';
+
+    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/daily/${date}?job_type=${jobType}`);
     //console.log(`[index] dailyPayoutReportLoader completed.`);
     return payoutData;
 }
-export const weeklyPayoutReportLoader=async ({ params }) => {
-    //console.log(`[index] weeklyPayoutReportLoader loading...`,params);
+export const weeklyPayoutReportLoader = async ({ params, request }) => {
+   // console.log(`[index] weeklyPayoutReportLoader loading...`, params);
     const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/weekly/${date}`);
-    //console.log(`[index] weeklyPayoutReportLoader completed.`);
+
+    // Get job_type from URL
+    const url = new URL(request.url);
+    const jobType = url.searchParams.get('job_type') || 'both';
+
+    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/weekly/${date}?job_type=${jobType}`);
+   // console.log(`[index] weeklyPayoutReportLoader completed.`);
     return payoutData;
 }
-export const monthlyPayoutReportLoader=async ({ params }) => {
-    //console.log(`[index] monthlyPayoutReportLoader loading...`,params);
+export const monthlyPayoutReportLoader = async ({ params, request }) => {
+    //console.log(`[index] monthlyPayoutReportLoader loading...`, params);
     const { date } = params;
-    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/monthly/${date}`);
+
+    // Get job_type from URL
+    const url = new URL(request.url);
+    const jobType = url.searchParams.get('job_type') || 'both';
+
+    const payoutData = await DataService.fetchData(`${API_BASE_URL}/api/payout/monthly/${date}?job_type=${jobType}`);
     //console.log(`[index] monthlyPayoutReportLoader completed.`);
     return payoutData;
 }

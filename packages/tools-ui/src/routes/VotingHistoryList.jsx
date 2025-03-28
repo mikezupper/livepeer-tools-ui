@@ -250,7 +250,10 @@ const VotingHistoryList = () => {
 
                             <Box sx={{ mt: 2 }}>
                                 <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                    Total Support: {selectedProposalData.forPct.toFixed(4)}%
+                                    Total Support: {selectedProposalData.totalSupportPct.toFixed(4)}%
+                                </Typography>
+                                <Typography variant="caption" color="textSecondary">
+                                    (For / (For + Against), excluding Abstain votes)
                                 </Typography>
                                 <Box
                                     sx={{
