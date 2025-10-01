@@ -21,14 +21,11 @@ export const statsLoader=async () => {
     //console.log(`[index] statsLoader completed.`);
     return {pipelines};
 }
-export const proposalLoader=async () => {
+
+export const proposalLoader = async () => {
     //console.log(`[index] proposalLoader loading...`);
     const proposals = await DataService.getProposals();
-    // Convert proposals object to an array of [proposalId, proposalData]
     let proposalEntries = Object.values(proposals);
-    // Sort by timestamp (descending)
-    proposalEntries.sort((a, b) => b.createdAt - a.createdAt);
-
     //console.log(`[index] proposalLoader completed.`);
     return {proposals,proposalList:proposalEntries};
 }

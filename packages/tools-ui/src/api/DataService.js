@@ -5,7 +5,7 @@ import db from '../db.js';
 import { governorABI } from "../abi.js";
 import {
     aiLeaderboardStatsURL,
-    aiPerfStatsURL,
+    aiPerfStatsURL, API_BASE_URL,
     leaderboardStatsURL, orchDetailsURL,
     perfStatsURL,
     pipelinesURL,
@@ -42,36 +42,22 @@ limiter.on('failed', async (error, jobInfo) => {
     return null;
 });
 
-const limitedGetBlock = limiter.wrap(provider.getBlock.bind(provider));
-
-const firstTreasuryProposal = 162890764;
-const LAST_PROPOSAL_BLOCK_KEY = 'lastProposalProcessedBlock';
-const LAST_VOTE_BLOCK_KEY = 'lastVoteProcessedBlock';
-
-async function getLastProposalProcessedBlock() {
-    let block = await getMetadata(LAST_PROPOSAL_BLOCK_KEY);
-    if (block === null) {
-        block = firstTreasuryProposal;
-        await setMetadata(LAST_PROPOSAL_BLOCK_KEY, block);
-    }
-    return block;
+async function httpGetJSON(url) {
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return res.json();
+}
+function supportToLabel(support) {
+    const n = Number(support);
+    if (n === 1) return "Yes";
+    if (n === 2) return "Abstain";
+    return "No";
 }
 
-async function updateLastProposalProcessedBlock(block) {
-    await setMetadata(LAST_PROPOSAL_BLOCK_KEY, block);
-}
-
-async function getLastVoteProcessedBlock() {
-    let block = await getMetadata(LAST_VOTE_BLOCK_KEY);
-    if (block === null) {
-        block = firstTreasuryProposal;
-        await setMetadata(LAST_VOTE_BLOCK_KEY, block);
-    }
-    return block;
-}
-
-async function updateLastVoteProcessedBlock(block) {
-    await setMetadata(LAST_VOTE_BLOCK_KEY, block);
+function toInt(nLike) {
+    if (nLike == null) return 0;
+    const n = typeof nLike === 'string' ? parseInt(nLike, 10) : Number(nLike);
+    return Number.isFinite(n) ? n : 0;
 }
 
 const weiToEth = (wei) => {
@@ -85,197 +71,172 @@ const getFirstLine = (text) => {
     return firstLine;
 };
 
+
 async function fetchAndStoreProposals() {
-    const latestBlock = await provider.getBlockNumber();
-    const fromBlock = await getLastProposalProcessedBlock();
-    const toBlock = latestBlock;
+    let proposals = [];
+    try {
+        proposals = await httpGetJSON(`${API_BASE_URL}/api/treasury/proposals`);
+        if (!Array.isArray(proposals)) {
+            console.warn("Unexpected proposals response shape; expected an array");
+            proposals = [];
+        }
+    } catch (err) {
+        console.error("Failed to fetch proposals:", err);
+        return;
+    }
 
-    const proposalCreatedFilter = governorContract.filters.ProposalCreated();
-    const proposalCreatedEvents = await governorContract.queryFilter(proposalCreatedFilter, fromBlock, toBlock);
-
-    for (const event of proposalCreatedEvents) {
-        const { proposalId, proposer, description, voteStart, voteEnd } = event.args;
-        if (proposalId === undefined) continue;
-        const propId = proposalId.toString();
-
+    // Upsert proposals into IndexedDB
+    for (const p of proposals) {
+        const propId = String(p.proposal_id);
         const existing = await db.proposals.get(propId);
-        const orchestrator = await db.orchestrators.get(proposer.toLowerCase());
-        const proposerName = orchestrator ? orchestrator.name : '';
-        const proposerAvatar = orchestrator ? orchestrator.avatar : '';
+
+        // We don't get proposer address/name/avatar from this API; leave blanks or keep existing values.
+        const baseFields = {
+            id: propId,
+            title: getFirstLine(p.description || ""),
+            description: p.description || "",
+            proposerAddress: existing?.proposerAddress || "",
+            proposerName:    existing?.proposerName    || "",
+            proposerAvatar:  existing?.proposerAvatar  || "",
+            voteStart: toInt(p.vote_start),
+            voteEnd:   toInt(p.vote_end),
+        };
 
         if (!existing) {
-            const proposal = {
-                id: propId,
-                title: getFirstLine(description),
-                description,
-                proposerAddress: proposer.toLowerCase(),
-                proposerName,
-                proposerAvatar,
-                voteStart: voteStart?.toNumber ? voteStart.toNumber() : 0,
-                voteEnd: voteEnd?.toNumber ? voteEnd.toNumber() : 0,
+            await db.proposals.add({
+                ...baseFields,
                 status: 'Created',
-                createdAt: Date.now(),
-            };
-            await db.proposals.add(proposal);
+                // createdAt: Date.now(),
+                totalStake: 0,
+            });
         } else {
             await db.proposals.update(propId, {
-                status: 'Created',
-                voteStart: voteStart?.toNumber ? voteStart.toNumber() : existing.voteStart,
-                voteEnd: voteEnd?.toNumber ? voteEnd.toNumber() : existing.voteEnd,
+                ...baseFields,
             });
         }
-        await refreshProposalState(propId);
+
+        // IMPORTANT: still compute truth from chain
+        try {
+            await refreshProposalState(propId);
+        } catch (e) {
+            console.warn(`refreshProposalState failed for ${propId}:`, e);
+        }
     }
 
-    const proposalCanceledFilter = governorContract.filters.ProposalCanceled();
-    const proposalCanceledEvents = await governorContract.queryFilter(proposalCanceledFilter, fromBlock, toBlock);
-    for (const event of proposalCanceledEvents) {
-        const { proposalId } = event.args;
-        const propId = proposalId.toString();
-        const existing = await db.proposals.get(propId);
-        if (!existing) continue;
-        await db.proposals.update(propId, { status: 'Canceled' });
-        await refreshProposalState(propId);
-    }
-
-    const proposalExecutedFilter = governorContract.filters.ProposalExecuted();
-    const proposalExecutedEvents = await governorContract.queryFilter(proposalExecutedFilter, fromBlock, toBlock);
-    for (const event of proposalExecutedEvents) {
-        const { proposalId } = event.args;
-        const propId = proposalId.toString();
-        const existing = await db.proposals.get(propId);
-        if (!existing) continue;
-        await db.proposals.update(propId, { status: 'Executed' });
-        await refreshProposalState(propId);
-    }
-
+    // For safety, re-check any active proposals for state drift
     const activeStatuses = ['Created', 'Active', 'Queued', 'Succeeded', 'Pending'];
-    const potentiallyChangedProposals = await db.proposals
+    const potentiallyChanged = await db.proposals
         .where('status')
         .anyOf(activeStatuses)
         .toArray();
 
-    for (const proposal of potentiallyChangedProposals) {
-        await refreshProposalState(proposal.id);
+    for (const proposal of potentiallyChanged) {
+        try {
+            await refreshProposalState(proposal.id);
+        } catch (e) {
+            console.warn(`refreshProposalState failed for ${proposal.id}:`, e);
+        }
     }
-
-    await updateLastProposalProcessedBlock(toBlock + 1);
 }
 
 async function fetchAndStoreVotes() {
-    const latestBlock = await provider.getBlockNumber();
-    const fromBlock = await getLastVoteProcessedBlock();
-    const toBlock = latestBlock;
-
-    // Fetch VoteCast events
-    const castVoteFilter = governorContract.filters.VoteCast();
-    let castVoteEvents = [];
+    let votes = [];
     try {
-        castVoteEvents = await governorContract.queryFilter(castVoteFilter, fromBlock, toBlock);
-    } catch (error) {
-        console.error("Error fetching VoteCast events:", error);
+        votes = await httpGetJSON(`${API_BASE_URL}/api/treasury/votes`);
+        if (!Array.isArray(votes)) {
+            console.warn("Unexpected votes response shape; expected an array");
+            votes = [];
+        }
+    } catch (err) {
+        console.error("Failed to fetch votes:", err);
         return;
     }
 
-    // Fetch VoteCastWithParams events
-    const voteCastWithParamsFilter = governorContract.filters.VoteCastWithParams();
-    let voteCastWithParamsEvents = [];
+    if (votes.length === 0) return;
+
+    // Build orchestrator lookup for voter enrichment
+    const voterAddresses = [...new Set(votes.map(v => String(v.voter).toLowerCase()))];
+    const knownOrchestrators = await db.orchestrators
+        .where('eth_address')
+        .anyOf(voterAddresses)
+        .toArray();
+    const orchByAddr = {};
+    knownOrchestrators.forEach(orch => { orchByAddr[orch.eth_address] = orch; });
+
+    // Prepare bulk inserts and per-proposal totals
+    const votesToAdd = [];
+    const totalByProposal = new Map();
+
+    // Optional: if your db.votes has a compound index like ["proposalId+voterAddress"], we can de-dupe
+    // cheaply by checking for existing records before adding. We'll try best-effort here.
+    const existingByKey = {};
     try {
-        voteCastWithParamsEvents = await governorContract.queryFilter(voteCastWithParamsFilter, fromBlock, toBlock);
-    } catch (error) {
-        console.error("Error fetching VoteCastWithParams events:", error);
+        // Load existing keys for quick duplicate checks
+        const existing = await db.votes
+            .where('proposalId')
+            .anyOf([...new Set(votes.map(v => String(v.proposal_id)))])
+            .toArray();
+        for (const e of existing) {
+            existingByKey[`${e.proposalId}::${e.voterAddress}`] = true;
+        }
+    } catch {
+        // If the index isn't available, we'll rely on bulkAdd error handling.
     }
 
-    // Combine both event types
-    const allEvents = [...castVoteEvents, ...voteCastWithParamsEvents];
-
-    if (allEvents.length === 0) return;
-
-    const votesToAdd = [];
-    const proposalsToUpdate = {};
-
-    const voterAddresses = allEvents.map(event => event.args.voter.toLowerCase());
-    const uniqueVoterAddresses = [...new Set(voterAddresses)];
-    const orchestrators = await db.orchestrators
-        .where('eth_address')
-        .anyOf(uniqueVoterAddresses)
-        .toArray();
-    const orchestratorMap = {};
-    orchestrators.forEach(orch => {
-        orchestratorMap[orch.eth_address] = orch;
-    });
-
-    for (const event of allEvents) {
-        const { voter, proposalId, support, weight } = event.args;
-        const reason = event.args.reason || '';
-        const params = event.args.params ? event.args.params.toString() : null;
-
-        const pid = proposalId.toString();
+    for (const raw of votes) {
+        const pid = String(raw.proposal_id);
         const proposalExists = await db.proposals.get(pid);
-        if (!proposalExists) continue;
+        if (!proposalExists) continue; // ignore votes for unknown proposals
 
-        const nSupport = Number(support);
-        let supportMsg = "No";
-        switch (nSupport) {
-            case 1:
-                supportMsg = "Yes";
-                break;
-            case 2:
-                supportMsg = "Abstain";
-                break;
-            default:
-                supportMsg = "No";
-                break;
-        }
+        const voterAddress = String(raw.voter).toLowerCase();
+        const orch = orchByAddr[voterAddress];
 
-        const voterAddress = voter.toLowerCase();
-        const orchestrator = orchestratorMap[voterAddress];
-        const voterName = orchestrator ? orchestrator.name : '';
-        const voterAvatar = orchestrator ? orchestrator.avatar : '';
+        // De-dup per (proposalId, voterAddress); adjust if you want multiple votes per voter
+        const key = `${pid}::${voterAddress}`;
+        if (existingByKey[key]) continue;
+
+        const stakeAmount = Number(raw.weight) || 0;
 
         const vote = {
             proposalId: pid,
             voterAddress,
-            voterName,
-            voterAvatar,
-            support: supportMsg,
-            stakeAmount: weiToEth(weight),
-            castAt: Date.now(),
-            reason,
-            params
+            voterName:   orch?.name   || '',
+            voterAvatar: orch?.avatar || '',
+            support: supportToLabel(raw.support),
+            stakeAmount,
+            castAt: Date.now(), // API doesn’t expose a timestamp; keep local time for now
+            reason: raw.reason || '',
+            params: null,
         };
-
         votesToAdd.push(vote);
 
-        if (!proposalsToUpdate[pid]) {
-            proposalsToUpdate[pid] = (proposalExists.totalStake || 0) + vote.stakeAmount;
-        } else {
-            proposalsToUpdate[pid] += vote.stakeAmount;
-        }
+        totalByProposal.set(pid, (totalByProposal.get(pid) || (proposalExists.totalStake || 0)) + stakeAmount);
     }
 
     if (votesToAdd.length > 0) {
         try {
             await db.votes.bulkAdd(votesToAdd);
         } catch (error) {
-            console.error("Error adding votes to IndexedDB:", error);
+            // If we hit constraint issues (duplicates), try a slower path:
+            console.warn("bulkAdd failed (likely duplicates). Falling back to put()-per-row:", error);
+            for (const v of votesToAdd) {
+                try { await db.votes.put(v); } catch (e) { /* ignore dup */ }
+            }
         }
     }
 
-    const proposalUpdatePromises = Object.entries(proposalsToUpdate).map(([pid, newTotalStake]) =>
-        db.proposals.update(pid, { totalStake: newTotalStake })
-    );
+    // Update per-proposal totalStake
+    const updatePromises = [];
+    for (const [pid, newTotal] of totalByProposal.entries()) {
+        updatePromises.push(db.proposals.update(pid, { totalStake: newTotal }));
+    }
     try {
-        await Promise.all(proposalUpdatePromises);
+        await Promise.all(updatePromises);
     } catch (error) {
         console.error("Error updating proposals' totalStake:", error);
     }
 
-    try {
-        await updateLastVoteProcessedBlock(toBlock + 1);
-    } catch (error) {
-        console.error("Error updating last processed vote block:", error);
-    }
+    // NOTE: No block cursor update here—these were API-derived votes.
 }
 
 async function fetchAndStoreOrchestrators() {
@@ -430,7 +391,7 @@ export default class DataServices {
     }
 
     static async getProposals() {
-        const proposals = await db.proposals.toArray();
+        const proposals = await db.proposals.orderBy('voteStart').reverse().toArray();
         for (const proposal of proposals) {
             const votes = await db.votes
                 .where('proposalId')
@@ -468,9 +429,9 @@ export default class DataServices {
             proposal.forPct = forPct;
             proposal.againstPct = againstPct;
             proposal.abstainPct = abstainPct;
-            proposal.totalSupportPct = totalSupportPct; // New property
+            proposal.totalSupportPct = totalSupportPct;
         }
-        proposals.sort((a, b) => b.createdAt - a.createdAt);
+        // proposals.sort((a, b) => b.vote_start - a.vote_start);
         return proposals;
     }
 
