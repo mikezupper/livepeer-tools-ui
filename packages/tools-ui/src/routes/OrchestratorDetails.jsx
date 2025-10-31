@@ -111,7 +111,7 @@ function OrchestratorDetails({ orch, idx }) {
                                     Total Stake
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
-                                    {orch.total_stake} ETH
+                                    {orch.total_stake} LPT
                                 </Typography>
                             </Box>
                         </Grid>
