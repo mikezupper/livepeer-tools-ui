@@ -1,6 +1,6 @@
 // db.js
 import Dexie from 'dexie';
-const latestDbName = 'livepeer-tools-db-new';
+const latestDbName = 'livepeer-tools-db';
 
 const db = new Dexie(latestDbName);
 

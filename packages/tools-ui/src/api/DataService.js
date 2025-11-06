@@ -23,24 +23,7 @@ if (!ARBITRUM_RPC_URL) {
 const provider = new JsonRpcProvider(ARBITRUM_RPC_URL);
 const GOVERNOR_ADDRESS = "0xcFE4E2879B786C3aa075813F0E364bb5acCb6aa0";
 const governorContract = new Contract(GOVERNOR_ADDRESS, governorABI, provider);
-
-// Initialize Bottleneck with desired rate limits
-const limiter = new Bottleneck({
-    reservoir: 10, // Number of requests that can be sent in the current interval
-    reservoirRefreshAmount: 10, // Number of requests to add at each interval
-    reservoirRefreshInterval: 1000, // Interval duration in milliseconds (1000 ms = 1 second)
-    maxConcurrent: 5, // Maximum number of concurrent requests
-    minTime: 100, // Minimum time between requests in milliseconds
-});
-
-limiter.on('failed', async (error, jobInfo) => {
-    if (error.status === 429) {
-        const retryAfter = error.headers?.['retry-after'] ? parseInt(error.headers['retry-after']) * 1000 : 1000;
-        console.warn(`Rate limited. Retrying after ${retryAfter} ms`);
-        return retryAfter;
-    }
-    return null;
-});
+const FINAL_PROPOSAL_STATES=["Executed","Defeated"]
 
 async function httpGetJSON(url) {
     const res = await fetch(url, { headers: { "Accept": "application/json" } });
@@ -116,11 +99,13 @@ async function fetchAndStoreProposals() {
         }
 
         // IMPORTANT: still compute truth from chain
-        try {
-            await refreshProposalState(propId);
-        } catch (e) {
-            console.warn(`refreshProposalState failed for ${propId}:`, e);
-        }
+            try {
+                if(!FINAL_PROPOSAL_STATES.includes(existing?.status)) {
+                    await refreshProposalState(propId);
+                }
+            } catch (e) {
+                console.warn(`refreshProposalState failed for ${propId}:`, e);
+            }
     }
 
     // For safety, re-check any active proposals for state drift
@@ -132,7 +117,9 @@ async function fetchAndStoreProposals() {
 
     for (const proposal of potentiallyChanged) {
         try {
-            await refreshProposalState(proposal.id);
+            if(!FINAL_PROPOSAL_STATES.includes(proposal?.status)) {
+                await refreshProposalState(proposal.id);
+            }
         } catch (e) {
             console.warn(`refreshProposalState failed for ${proposal.id}:`, e);
         }
