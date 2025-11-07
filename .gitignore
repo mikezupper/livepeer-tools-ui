@@ -137,3 +137,5 @@ packages/tools-ui/public/ai-generator
 
 **/dist
 **/node_modules
+/.idea/copilot.data.migration.agent.xml
+/.idea/copilot.data.migration.edit.xml

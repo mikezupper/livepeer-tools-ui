@@ -1,6 +1,5 @@
 // DataServices.js
 import { Contract, JsonRpcProvider } from "ethers";
-import Bottleneck from 'bottleneck';
 import db from '../db.js';
 import { governorABI } from "../abi.js";
 import {
@@ -494,6 +493,37 @@ export default class DataServices {
             throw new Error('Failed to fetch stats data');
         }
         return response.json();
+    }
+
+    static async getGatewayPayouts(eth_address,start,end) {
+        const params = new URLSearchParams();
+        params.append("eth_address",eth_address);
+        params.append("start",start);
+        params.append("end",end);
+
+        const response = await fetch(`${API_BASE_URL}/api/payouts/gateway`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString()
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch gateway payouts');
+        }
+        const data = await response.json();
+        const knownOrchestrators = await db.orchestrators .toArray();
+        const orchByAddr = {};
+        knownOrchestrators.forEach(orch => { orchByAddr[orch.eth_address] = orch; });
+        return data.map(x=>{
+            let orch = orchByAddr[x.recipient_id]
+            orch.name === ''
+                ? `${orch.eth_address.substring(0, 6)}...${orch.eth_address.substring(
+                    orch.eth_address.length - 4
+                )}`
+                : orch.name;
+            return {name:orch.name,...x}
+        })
     }
 }
 

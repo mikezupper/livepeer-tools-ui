@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useObservable } from "rxjs-hooks";
-import { $networkCapabilities } from "../../api/DataService.js";
+import {$networkCapabilities, fetchAndStoreCapabilities} from "../../api/DataService.js";
 
 const NetworkCapabilities = () => {
     const networkCapabilities = useObservable(() => $networkCapabilities(), []);

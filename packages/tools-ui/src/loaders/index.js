@@ -39,9 +39,13 @@ export const gatewaysLoader=async () => {
 export const gatewayLoader=async ({params}) => {
     //console.log(`[index] gatewayLoader loading...`,params);
     const { eth_address } = params;
+    const startDate = params.start || moment().subtract(7, 'days').format('YYYY-MM-DD');
+    const endDate = params.end || moment().format('YYYY-MM-DD');
+    const payout_params={...params,startDate,endDate}
     const gateway = await DataService.fetchData(`${API_BASE_URL}/api/gateway/${eth_address}`);
-    //console.log(`[index] gatewayLoader completed.`);
-    return {gateway};
+    const payouts = await DataService.getGatewayPayouts(eth_address,startDate,endDate);
+    // console.log(`[index] gatewayLoader completed.`);
+    return {gateway,payouts,payout_params};
 }
 export const dailyPayoutReportLoader = async ({ params, request }) => {
     //console.log(`[index] dailyPayoutReportLoader loading...`, params);
