@@ -270,7 +270,7 @@ async function fetchAndStoreOrchestrators() {
 export async function fetchAndStoreCapabilities() {
     try {
         let gw = getGatewayUrl();
-        let url = `${gw}/getOrchestratorAICapabilities`;
+        let url = `${gw}/getNetworkCapabilities`;
         let response = await fetch(url, {
             method: "GET",
             mode: "cors",
@@ -280,7 +280,7 @@ export async function fetchAndStoreCapabilities() {
             throw new Error('[GatewayDataFetcher] fetching Orchestrator AI Capabilities response was not ok');
         }
         let data = await response.json();
-
+        data = transformNetworkCapabilitiesToAICapabilities(data);
         const pipelines = {};
 
         for (let orchestrator of data.orchestrators) {
@@ -339,6 +339,91 @@ export async function fetchAndStoreCapabilities() {
     } catch (error) {
         console.error('[GatewayDataFetcher] Error fetching or storing capabilities:', error);
     }
+}
+/**
+ * Transforms the getNetworkCapabilities.json format into the getOrchestratorAICapabilities.json format,
+ * aggregating capabilities and de-duplicating orchestrator entries based on their address.
+ *
+ * @param {object} inputJson The parsed JSON content of getNetworkCapabilities.json.
+ * @returns {object} The transformed JSON object in the getOrchestratorAICapabilities.json format.
+ */
+function transformNetworkCapabilitiesToAICapabilities(inputJson) {
+    if (!inputJson || !inputJson.orchestrators) {
+        return { orchestrators: [] };
+    }
+
+    // Map to store orchestrator data, keyed by unique, lowercase address
+    const orchestratorsMap = new Map();
+
+    inputJson.orchestrators.forEach(orch => {
+        // Normalize the address to lowercase for consistency and use as a map key
+        const address = orch.address.toLowerCase();
+
+        // 1. Ensure the orchestrator structure exists in the map
+        if (!orchestratorsMap.has(address)) {
+            // The value stores the orchestrator data, with 'pipelines' being a Map for easy de-duplication
+            orchestratorsMap.set(address, {
+                address: address,
+                // Key: pipelineType (e.g., "Llm"), Value: full pipeline object
+                pipelines: new Map()
+            });
+        }
+
+        const orchData = orchestratorsMap.get(address);
+
+        if (orch.hardware && orch.hardware.length > 0) {
+            orch.hardware.forEach(hw => {
+                const pipelineName = hw.pipeline;
+                const modelName = hw.model_id;
+
+                if (pipelineName && modelName) {
+                    // Capitalization rule: Capitalize the first letter only (e.g., 'llm' -> 'Llm', 'text-to-image' -> 'Text-to-image')
+                    const pipelineType = pipelineName.charAt(0).toUpperCase() + pipelineName.slice(1);
+
+                    // 2. Ensure the pipeline structure exists for this orchestrator
+                    if (!orchData.pipelines.has(pipelineType)) {
+                        // The pipeline value stores the models in a Map for de-duplication
+                        orchData.pipelines.set(pipelineType, {
+                            type: pipelineType,
+                            // Key: modelName, Value: full model object
+                            models: new Map()
+                        });
+                    }
+
+                    const pipelineData = orchData.pipelines.get(pipelineType);
+
+                    // 3. Ensure the model structure exists (de-duplication)
+                    if (!pipelineData.models.has(modelName)) {
+                        pipelineData.models.set(modelName, {
+                            name: modelName,
+                            // Status is hardcoded based on the output format
+                            status: { "Cold": 0, "Warm": 1 }
+                        });
+                    }
+                }
+            });
+        }
+    });
+
+    // 4. Transform the nested Map structure back into the required array/object format
+    const finalOrchestrators = Array.from(orchestratorsMap.values()).map(orchData => {
+        // Convert the models Map to an array for each pipeline
+        const pipelinesArray = Array.from(orchData.pipelines.values()).map(pipelineData => {
+            return {
+                type: pipelineData.type,
+                models: Array.from(pipelineData.models.values())
+            };
+        });
+
+        return {
+            address: orchData.address,
+            pipelines: pipelinesArray
+        };
+    }).filter(orch => orch.pipelines.length > 0); // Remove orchestrators that ended up with no capabilities
+
+    return {
+        orchestrators: finalOrchestrators
+    };
 }
 
 const TURN_OFF_UPDATES = false;
