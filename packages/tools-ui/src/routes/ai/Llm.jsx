@@ -31,7 +31,7 @@ const Llm = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [output, setOutput] = useState("");
-    const models = useObservable(() => $supportedModels("Llm"), []);
+    const models = useObservable(() => $supportedModels("llm"), []);
     // Update the model_id once models are loaded
     React.useEffect(() => {
         if (models.length > 0 && !formState.model_id) {

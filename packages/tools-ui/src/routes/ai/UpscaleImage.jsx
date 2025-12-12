@@ -31,8 +31,8 @@ const UpscaleImage = () => {
     const [outputImages, setOutputImages] = useState([]);
     const [videoOutputs, setVideoOutputs] = useState([]);
 
-    const models = useObservable(() => $supportedModels("Upscale"), []);
-    const videoModels = useObservable(() => $supportedModels("Image to Video"), []);
+    const models = useObservable(() => $supportedModels("upscale"), []);
+    const videoModels = useObservable(() => $supportedModels("image-to-video"), []);
 
     const handleVideoGenerated = (videoUrl) => {
         setVideoOutputs((prevVideos) => [...prevVideos, videoUrl]);

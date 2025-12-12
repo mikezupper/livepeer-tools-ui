@@ -29,7 +29,7 @@ const ImageToText = () => {
     const [loading, setLoading] = useState(false);
     const [generatedText, setGeneratedText] = useState("");
 
-    const models = useObservable(() => $supportedModels("Image to Text"), []);
+    const models = useObservable(() => $supportedModels("image-to-text"), []);
     // Update the model_id once models are loaded
     React.useEffect(() => {
         if (models.length > 0 && !formState.model_id) {

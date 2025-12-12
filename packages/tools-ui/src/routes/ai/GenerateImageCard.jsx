@@ -42,6 +42,11 @@ const GeneratedImageCard = ({ imageSrc,onVideoGenerated,videoModels }) => {
     const handleGenerateVideo = async () => {
         if (!imageSrc) return;
 
+        if(!formState.model_id) {
+            console.warn("handleGenerateVideo model_id is null!!!");
+            return;
+        }
+
         setIsLoading(true);
 
         try {

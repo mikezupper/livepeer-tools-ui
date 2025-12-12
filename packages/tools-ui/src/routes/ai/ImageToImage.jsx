@@ -38,8 +38,8 @@ const ImageToImage = () => {
     const [outputImages, setOutputImages] = useState([]);
     const [videoOutputs, setVideoOutputs] = useState([]);
 
-    const models = useObservable(() => $supportedModels("Image to Image"), []);
-    const videoModels = useObservable(() => $supportedModels("Image to Video"), []);
+    const models = useObservable(() => $supportedModels("image-to-image"), []);
+    const videoModels = useObservable(() => $supportedModels("image-to-video"), []);
     // Update the model_id once models are loaded
     React.useEffect(() => {
         if (models.length > 0 && !formState.model_id) {

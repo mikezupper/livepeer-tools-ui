@@ -19,7 +19,7 @@ import {$supportedModels} from "../../api/DataService.js";
 import {floatFields, intFields} from "./utils.js";
 
 const GenerateVideoCard = () => {
-    const models = useObservable(() => $supportedModels("Image to Video"), []);
+    const models = useObservable(() => $supportedModels("image-to-video"), []);
 
     const [formState, setFormState] = useState({
         model_id: models[0] ? models[0]: "",

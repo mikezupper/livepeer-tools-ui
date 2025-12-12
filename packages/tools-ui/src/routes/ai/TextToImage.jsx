@@ -20,8 +20,8 @@ import {floatFields, getBearerToken, getGatewayUrl, intFields, num_between} from
 import GeneratedImageCard from "./GenerateImageCard.jsx";
 
 const TextToImage = () => {
-    const models = useObservable(() => $supportedModels("Text to image"), []);
-    const videoModels = useObservable(() => $supportedModels("Image to Video"), []);
+    const models = useObservable(() => $supportedModels("text-to-image"), []);
+    const videoModels = useObservable(() => $supportedModels("image-to-video"), []);
     const init_state = {
         prompt: "",
         model_id: "",

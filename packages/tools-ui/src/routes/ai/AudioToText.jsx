@@ -112,7 +112,7 @@ const AudioToText = () => {
         outputElement.appendChild(downloadButton);
     };
 
-    const pipelineNameFilter = "Audio to text";
+    const pipelineNameFilter = "audio-to-text";
     const models = useObservable(() => $supportedModels(pipelineNameFilter), []);
     // Update the model_id once models are loaded
     React.useEffect(() => {

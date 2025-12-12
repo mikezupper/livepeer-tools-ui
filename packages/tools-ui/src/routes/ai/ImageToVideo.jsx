@@ -32,7 +32,7 @@ const ImageToVideo = () => {
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [loading, setLoading] = useState(false);
-    const models = useObservable(() => $supportedModels("Image to Video"), []);
+    const models = useObservable(() => $supportedModels("image-to-video"), []);
     // Update the model_id once models are loaded
     React.useEffect(() => {
         if (models.length > 0 && !formState.model_id) {
