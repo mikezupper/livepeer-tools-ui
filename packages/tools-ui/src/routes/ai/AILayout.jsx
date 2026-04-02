@@ -20,6 +20,7 @@ import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import LanguageIcon from "@mui/icons-material/Language";
 import NetworkCheckIcon from "@mui/icons-material/NetworkCheck";
 import SettingsIcon from "@mui/icons-material/Settings";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
 
 // Unique icons for Image Tasks submenu
 import CreateIcon from "@mui/icons-material/Create";
@@ -89,6 +90,7 @@ export default function AILayout() {
         },
         { text: "SAM-2", icon: <TravelExploreIcon />, path: "segment-anything-2" },
         { text: "LLM", icon: <LanguageIcon />, path: "llm" },
+        { text: "BYOC OpenAI", icon: <SmartToyIcon />, path: "byoc/openai" },
         { text: "Capabilities", icon: <NetworkCheckIcon />, path: "network-capabilities" },
         { text: "Settings", icon: <SettingsIcon />, path: "settings" },
     ];

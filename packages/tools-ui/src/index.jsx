@@ -35,6 +35,7 @@ import SegmentAnything2 from "./routes/ai/SegmentAnything2.jsx";
 import Llm from "./routes/ai/Llm.jsx";
 import NetworkCapabilities from "./routes/ai/NetworkCapabilities.jsx";
 import Settings from "./routes/ai/Settings.jsx";
+import OpenAIByoc from "./routes/ai/byoc/openai/OpenAIByoc.jsx";
 const currentDate = new Date().toISOString().split('T')[0];
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -171,6 +172,7 @@ const router = createBrowserRouter(
                 <Route path="segment-anything-2" element={<SegmentAnything2 />} />
                 <Route path="audio-to-text" element={<AudioToText />} />
                 <Route path="text-to-speech" element={<TextToSpeech />} />
+                <Route path="byoc/openai" element={<OpenAIByoc />} />
             </Route>
             {/* Catch-all route for undefined paths */}
             <Route

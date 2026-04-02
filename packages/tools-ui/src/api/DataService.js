@@ -352,6 +352,33 @@ function transformNetworkCapabilitiesToAICapabilities(inputJson) {
         return { orchestrators: [] };
     }
 
+    const capabilitiesNames = inputJson.capabilities_names || {};
+
+    function addPipelineModel(orchData, pipelineName, modelName) {
+        if (!pipelineName || !modelName) {
+            return;
+        }
+
+        // Capitalize the first letter only (e.g. "llm" -> "Llm", "text-to-image" -> "Text-to-image")
+        const pipelineType = pipelineName.charAt(0).toUpperCase() + pipelineName.slice(1);
+
+        if (!orchData.pipelines.has(pipelineType)) {
+            orchData.pipelines.set(pipelineType, {
+                type: pipelineType,
+                models: new Map()
+            });
+        }
+
+        const pipelineData = orchData.pipelines.get(pipelineType);
+
+        if (!pipelineData.models.has(modelName)) {
+            pipelineData.models.set(modelName, {
+                name: modelName,
+                status: { "Cold": 0, "Warm": 1 }
+            });
+        }
+    }
+
     // Map to store orchestrator data, keyed by unique, lowercase address
     const orchestratorsMap = new Map();
 
@@ -376,31 +403,42 @@ function transformNetworkCapabilitiesToAICapabilities(inputJson) {
                 const pipelineName = hw.pipeline;
                 const modelName = hw.model_id;
 
-                if (pipelineName && modelName) {
-                    // Capitalization rule: Capitalize the first letter only (e.g., 'llm' -> 'Llm', 'text-to-image' -> 'Text-to-image')
-                    const pipelineType = pipelineName.charAt(0).toUpperCase() + pipelineName.slice(1);
+                addPipelineModel(orchData, pipelineName, modelName);
+            });
+        }
 
-                    // 2. Ensure the pipeline structure exists for this orchestrator
-                    if (!orchData.pipelines.has(pipelineType)) {
-                        // The pipeline value stores the models in a Map for de-duplication
-                        orchData.pipelines.set(pipelineType, {
-                            type: pipelineType,
-                            // Key: modelName, Value: full model object
-                            models: new Map()
-                        });
+        if (orch.capabilities_prices && orch.capabilities_prices.length > 0) {
+            orch.capabilities_prices.forEach(price => {
+                const capabilityId = String(price.capability);
+                const capabilityName = capabilitiesNames[capabilityId];
+                const isByocCapability = capabilityId === "37" || capabilityName?.toLowerCase() === "byoc";
+
+                if (isByocCapability) {
+                    // For BYOC, constraint is the pipeline name (e.g. "openai-chat-completions").
+                    // Models come from capability_options, not here — just ensure the pipeline exists.
+                    const pipelineName = price.constraint;
+                    if (pipelineName) {
+                        const pipelineType = pipelineName.charAt(0).toUpperCase() + pipelineName.slice(1);
+                        if (!orchData.pipelines.has(pipelineType)) {
+                            orchData.pipelines.set(pipelineType, { type: pipelineType, models: new Map() });
+                        }
                     }
-
-                    const pipelineData = orchData.pipelines.get(pipelineType);
-
-                    // 3. Ensure the model structure exists (de-duplication)
-                    if (!pipelineData.models.has(modelName)) {
-                        pipelineData.models.set(modelName, {
-                            name: modelName,
-                            // Status is hardcoded based on the output format
-                            status: { "Cold": 0, "Warm": 1 }
-                        });
-                    }
+                } else {
+                    const pipelineName = (price.pipeline || capabilityName || "").toLowerCase();
+                    const modelName = price.constraint;
+                    addPipelineModel(orchData, pipelineName, modelName);
                 }
+            });
+        }
+
+        if (orch.capability_options) {
+            Object.entries(orch.capability_options).forEach(([pipelineName, options]) => {
+                if (!Array.isArray(options)) return;
+                options.forEach(opt => {
+                    if (opt.model) {
+                        addPipelineModel(orchData, pipelineName, opt.model);
+                    }
+                });
             });
         }
     });
