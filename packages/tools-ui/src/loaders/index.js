@@ -96,6 +96,26 @@ export const orchestratorLoader=async ({params}) => {
     //console.log(`[index] orchestratorLoader completed.`);
     return {orchestrator};
 }
+export const dailyTicketsReportLoader = async ({ params }) => {
+    const startDate = params.startDate || moment().subtract(30, 'days').format('YYYY-MM-DD');
+    const endDate = params.endDate || moment().format('YYYY-MM-DD');
+    const jobType = params.jobType || 'both';
+
+    const url = `${API_BASE_URL}/api/payout/tickets/daily/${startDate}/${endDate}?job_type=${jobType}`;
+    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+    if (!response.ok) {
+        let message = `Request failed (${response.status})`;
+        try {
+            const body = await response.json();
+            if (body && body.error) message = body.error;
+        } catch (_) { /* non-JSON body */ }
+        throw new Error(message);
+    }
+
+    return response.json();
+};
+
 export const topPayoutReportLoader = async ({ params }) => {
     //console.log(`[index] topPayoutReportLoader loading...`, params);
     const startDate = params.startDate || moment().subtract(7, 'days').format('YYYY-MM-DD');

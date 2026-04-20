@@ -10,12 +10,13 @@ import Home from "./routes/Home.jsx";
 import PayoutSummaryReport from "./routes/PayoutSummaryReport.jsx";
 import Typography from "@mui/material/Typography";
 import TopPayoutReport from "./routes/TopPayoutReport.jsx";
+import DailyTicketsReport from "./routes/DailyTicketsReport.jsx";
 import Orchestrator from "./routes/Orchestrator.jsx";
 import VotingHistoryList from "./routes/VotingHistoryList.jsx";
 import Stats from "./routes/Stats.jsx";
 import Leaderboard from "./routes/Leaderboard.jsx";
 import {
-    dailyPayoutReportLoader, gatewayLoader,
+    dailyPayoutReportLoader, dailyTicketsReportLoader, gatewayLoader,
     gatewaysLoader, leaderboardLoader, monthlyPayoutReportLoader,
     orchestratorLoader,
     orchestratorsLoader, proposalLoader, statsLoader, topPayoutReportLoader,
@@ -136,6 +137,13 @@ const router = createBrowserRouter(
                 path="reports/top/payout"
                 element={<TopPayoutReport/>}
                 loader={topPayoutReportLoader}
+                hydrateFallbackElement={<CircularProgress />}
+            />
+            <Route
+                index
+                path="reports/tickets/daily"
+                element={<DailyTicketsReport/>}
+                loader={dailyTicketsReportLoader}
                 hydrateFallbackElement={<CircularProgress />}
             />
 

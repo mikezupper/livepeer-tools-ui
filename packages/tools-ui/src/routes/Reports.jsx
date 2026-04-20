@@ -26,6 +26,12 @@ function Reports() {
             link: "/reports/top/payout",
         },
         {
+            title: "Daily Winning Tickets Trend",
+            description:
+                "A line chart of daily winning-ticket counts, split by AI and Transcoding jobs, to visualize Livepeer's growth over time. Pick any date range up to two years.",
+            link: "/reports/tickets/daily",
+        },
+        {
             title: "Daily Payout Report",
             description:
                 "A tabular report that shows the payouts from Livepeer Protocol. The values are displayed in ETH and USD. You can view all the payouts for a specific day.",
