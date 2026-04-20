@@ -35,6 +35,7 @@ function OpenAIByoc() {
         stream: true,
     });
     const [chatOutput, setChatOutput] = useState("");
+    const [chatReasoning, setChatReasoning] = useState("");
 
     const [imageForm, setImageForm] = useState({
         model: "",
@@ -100,10 +101,14 @@ function OpenAIByoc() {
         return "";
     };
 
+    const stripHeaderTokens = (text) =>
+        text.replace(/<\|start_header_id\|>assistant<\|end_header_id\|>/g, "");
+
     const handleChatSubmit = async (event) => {
         event.preventDefault();
         resetMessages();
         setChatOutput("");
+        setChatReasoning("");
 
         if (!chatForm.prompt.trim()) {
             setErrorMessage("Prompt is required.");
@@ -126,21 +131,38 @@ function OpenAIByoc() {
             if (chatForm.stream) {
                 const stream = await createChatCompletionStream(payload);
                 let accumulatedContent = "";
+                let accumulatedReasoning = "";
 
                 for await (const chunkData of stream) {
-                    const deltaContent = chunkData?.choices?.[0]?.delta?.content;
-                    const chunk = extractText(deltaContent)
-                        .replace(/<\|start_header_id\|>assistant<\|end_header_id\|>/g, "");
-                    if (chunk) {
-                        accumulatedContent += chunk;
+                    const delta = chunkData?.choices?.[0]?.delta;
+                    const contentChunk = stripHeaderTokens(extractText(delta?.content));
+                    const reasoningChunk = stripHeaderTokens(
+                        extractText(delta?.reasoning) || extractText(delta?.reasoning_content)
+                    );
+                    if (contentChunk) {
+                        accumulatedContent += contentChunk;
+                        setChatOutput(marked(accumulatedContent));
                     }
-                    setChatOutput(marked(accumulatedContent));
+                    if (reasoningChunk) {
+                        accumulatedReasoning += reasoningChunk;
+                        setChatReasoning(accumulatedReasoning);
+                    }
                 }
             } else {
                 const data = await createChatCompletion(payload);
-                const content = extractText(data?.choices?.[0]?.message?.content || data?.choices?.[0]?.delta?.content)
-                    .replace(/<\|start_header_id\|>assistant<\|end_header_id\|>/g, "");
+                const message = data?.choices?.[0]?.message;
+                const delta = data?.choices?.[0]?.delta;
+                const content = stripHeaderTokens(
+                    extractText(message?.content) || extractText(delta?.content)
+                );
+                const reasoning = stripHeaderTokens(
+                    extractText(message?.reasoning)
+                    || extractText(message?.reasoning_content)
+                    || extractText(delta?.reasoning)
+                    || extractText(delta?.reasoning_content)
+                );
                 setChatOutput(marked(content));
+                setChatReasoning(reasoning);
             }
             setSuccessMessage("Chat completion generated.");
         } catch (error) {
@@ -332,16 +354,38 @@ function OpenAIByoc() {
                         <Card elevation={3}>
                             <CardContent>
                                 <Typography variant="h6" gutterBottom>Response</Typography>
-                                {loading ? <CircularProgress size={22} /> : (
-                                    <>
-                                        {chatOutput ? (
-                                            <div dangerouslySetInnerHTML={{ __html: chatOutput }} />
-                                        ) : (
-                                            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                                                No output yet.
-                                            </Typography>
-                                        )}
-                                    </>
+                                {loading && !chatOutput && !chatReasoning && <CircularProgress size={22} />}
+                                {chatReasoning && (
+                                    <Box
+                                        sx={{
+                                            mb: 2,
+                                            p: 1.5,
+                                            borderLeft: 3,
+                                            borderColor: "divider",
+                                            backgroundColor: "action.hover",
+                                            borderRadius: 1,
+                                        }}
+                                    >
+                                        <Typography variant="caption" color="textSecondary" sx={{ display: "block", mb: 0.5 }}>
+                                            Thinking
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            component="pre"
+                                            sx={{ whiteSpace: "pre-wrap", fontFamily: "inherit", m: 0 }}
+                                        >
+                                            {chatReasoning}
+                                        </Typography>
+                                    </Box>
+                                )}
+                                {chatOutput ? (
+                                    <div dangerouslySetInnerHTML={{ __html: chatOutput }} />
+                                ) : (
+                                    !chatReasoning && !loading && (
+                                        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                                            No output yet.
+                                        </Typography>
+                                    )
                                 )}
                             </CardContent>
                         </Card>
